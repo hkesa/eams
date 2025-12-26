@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>僱傭中心管理系統</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS (Excel) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.css"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF (PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --main-font-size: 21px;
+            /* 定義凍結欄位的左側距離 */
+            --sticky-col-0-left: 0px;       /* 修改按鈕 (60px) */
+            --sticky-col-1-left: 60px;      /* 檔案編號 (120px) */
+            --sticky-col-2-left: 180px;     /* 僱主姓名 (180px) */
+        }
+
+        html, body, input, button, select, textarea, div, span, th, td {
+            font-size: var(--main-font-size) !important;
+            font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+        }
+
+        .nav-btn { padding: 10px 15px; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.3s; cursor: pointer; }
+        .nav-btn.active { border-bottom: 3px solid #3b82f6; color: #3b82f6; font-weight: bold; }
+
+        /* Version Badge integrated in Nav */
+        .version-tag { color: black; font-weight: bold; font-size: 16px !important; margin-left: 10px; align-self: center; }
+
+        .custom-table { border-collapse: separate; border-spacing: 0; width: max-content; }
+        .custom-table th, .custom-table td {
+            border-right: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;
+            padding: 6px 8px; vertical-align: middle !important; text-align: center !important; 
+            white-space: normal !important; word-wrap: break-word;
+        }
+        .custom-table th { line-height: 1.2; background-clip: padding-box; }
+
+        input:not([type="checkbox"]), textarea, select { width: 100%; background: transparent; border: none; resize: none; text-align: center; vertical-align: middle; white-space: normal; }
+        .editing-input { background-color: #ffffff !important; border: 2px solid #3b82f6 !important; border-radius: 4px; }
+        input[type="checkbox"] { width: 24px; height: 24px; cursor: pointer; }
+
+        /* File Management Sticky */
+        #files-table thead tr:first-child th { top: 0; position: sticky; z-index: 60; border-bottom: 2px solid #d1d5db; height: 35px; }
+        #files-table thead tr:nth-child(2) th { top: 35px; position: sticky; z-index: 50; background-color: #f3f4f6; height: 60px; padding-bottom: 4px; }
+        #files-table .col-file-no { min-width: 120px !important; width: 120px; }
+
+        /* Column Widths */
+        .col-fit-text { min-width: 100px; width: auto; }
+        .col-std { min-width: 150px; width: 150px; }
+        .col-len-10 { min-width: 140px; width: 140px; } 
+        .col-len-12 { min-width: 170px; width: 170px; } 
+        .col-narrow { min-width: 112px; width: 112px; }
+        .col-remind-helper { min-width: 140px; width: 140px; } 
+        .col-remind-emp { min-width: 160px; width: 160px; } 
+        .col-wide { min-width: 250px; width: 250px; }
+        .col-address { min-width: 400px; width: 400px; }
+        .col-remark-wide { min-width: 350px; width: 350px; }
+        .col-remark-narrow { min-width: 175px; width: 175px; } 
+        .col-super-wide { min-width: 500px; width: 500px; }
+        .col-plus-chars-2 { min-width: 200px; width: 200px; } 
+        .col-plus-chars-3 { min-width: 220px; width: 220px; }
+        
+        /* Sticky Columns Style */
+        .sticky-col { position: sticky; z-index: 40; border-right: 2px solid #d1d5db !important; } 
+        .sticky-col-header { z-index: 70 !important; background-color: #f3f4f6; } 
+        .sticky-group-header { z-index: 95 !important; background-color: #e5e7eb; }
+
+        .col-idx-0 { left: var(--sticky-col-0-left); width: 60px; min-width: 60px !important; }
+        .col-idx-1 { left: var(--sticky-col-1-left); width: 120px !important; } 
+        .col-idx-2 { left: var(--sticky-col-2-left); width: 180px !important; }
+
+        /* Alert Tables Sticky Headers */
+        .alert-table thead tr th { top: 0; position: sticky; z-index: 70; background-color: #f3f4f6; height: 60px; }
+
+        /* Insurance Mgmt Sticky */
+        #ins-mgmt-table thead tr:first-child th { top: 0; position: sticky; z-index: 60; background-color: #e0f2fe; height: 50px; }
+
+        /* Labour Table Sticky */
+        #labour-table thead tr:nth-child(1) th { top: 0; position: sticky; z-index: 35; background-color: #e5e7eb; height: 40px; }
+        #labour-table thead tr:nth-child(2) th { top: 40px; position: sticky; z-index: 34; background-color: #f3f4f6; height: 40px; }
+        #labour-table thead tr:nth-child(3) th { top: 80px; position: sticky; z-index: 33; background-color: #f9fafb; height: 60px; }
+
+        /* --- Status Colors & Sticky Backgrounds --- */
+        /* IMPORTANT: Sticky cols must inherit row bg color to obscure scrolled content */
+        
+        /* Default Row */
+        tbody tr:nth-child(even) td { background-color: #f9fafb; }
+        tbody tr:nth-child(odd) td { background-color: #ffffff; }
+        tbody tr:nth-child(even) .sticky-col { background-color: #f9fafb; }
+        tbody tr:nth-child(odd) .sticky-col { background-color: #ffffff; }
+
+        /* 已完成 / 已收款 #dceafe */
+        .row-blue td, .row-blue .sticky-col { background-color: #dceafe !important; } 
+        
+        /* 已退款 / 已取消 #fee2e1 */
+        .row-red td, .row-red .sticky-col { background-color: #fee2e1 !important; } 
+        
+        /* 其他 / 外傭已終止 #9a9a9a */
+        .row-dark-gray td, .row-dark-gray .sticky-col { background-color: #9a9a9a !important; } 
+        
+        /* 淺灰 fallback if needed */
+        .row-gray td, .row-gray .sticky-col { background-color: #f3f4f6 !important; }
+
+        .row-transparent { background-color: transparent !important; }
+
+        /* Hover Effect (overrides row color temporarily for focus) */
+        .hover-row td, .hover-row .sticky-col { background-color: #e0f2fe !important; }
+        .hover-col { background-color: #e0f2fe !important; }
+
+        .btn { padding: 6px 12px; border-radius: 6px; color: white; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+
+        .alert-info-card {
+            background-color: #fee2e2; color: #991b1b;
+            padding: 10px 15px; margin-bottom: 10px;
+            border-radius: 6px; font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+
+        .bg-group-red { background-color: #fee2e2 !important; }
+        .bg-group-orange { background-color: #ffedd5 !important; }
+        .bg-group-yellow { background-color: #fef9c3 !important; }
+        .bg-group-green { background-color: #dcfce7 !important; }
+        .bg-group-cyan { background-color: #cffafe !important; }
+        .bg-group-blue { background-color: #dbeafe !important; }
+        .bg-group-purple { background-color: #f3e8ff !important; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; display: flex; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-btn { display: block; width: 100%; padding: 10px; margin: 5px 0; background: #3b82f6; color: white; border-radius: 5px; text-align: center; }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col overflow-hidden">
+
+    <nav class="bg-white shadow-md z-50 overflow-x-auto relative pr-20">
+        <div class="flex px-4 min-w-max h-full items-center">
+            <button class="nav-btn active" onclick="switchTab('file-management')">檔案管理</button>
+            <button class="nav-btn" onclick="switchTab('insurance-mgmt')">保險管理</button>
+            <button class="nav-btn" onclick="switchTab('receipt-management')">收據管理</button>
+            <button class="nav-btn" onclick="switchTab('labour-record')">勞工處紀錄表格</button>
+            <button class="nav-btn" onclick="switchTab('passport-alert')">短護照提醒</button>
+            <button class="nav-btn" onclick="switchTab('visa-alert')">短簽證提醒</button>
+            <button class="nav-btn" onclick="switchTab('renewal-alert')">續約提醒</button>
+            <button class="nav-btn" onclick="switchTab('insurance-alert')">保險提醒</button>
+            <span class="version-tag">V1.14</span>
+        </div>
+    </nav>
+
+    <main class="flex-1 overflow-hidden relative">
+        
+        <!-- 1. 檔案管理 -->
+        <div id="file-management" class="tab-content h-full flex flex-col p-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex gap-4">
+                    <button onclick="addNewFile()" class="btn bg-blue-600 hover:bg-blue-700"><i class="fas fa-plus"></i> 新增檔案</button>
+                    <div id="edit-controls-file" class="hidden flex gap-4">
+                        <button onclick="saveChanges('file')" class="btn bg-red-600 hover:bg-red-700 animate-bounce"><i class="fas fa-save"></i> 儲存修改</button>
+                        <button onclick="cancelChanges('file')" class="btn bg-gray-500"><i class="fas fa-times"></i> 取消修改</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span id="auto-save-status" class="text-gray-500 italic"></span>
+                    <button onclick="exportToExcel()" class="btn bg-green-600"><i class="fas fa-file-excel"></i> 匯出 Excel</button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-auto border border-gray-300 rounded shadow bg-white relative">
+                <table class="custom-table" id="files-table">
+                    <thead id="table-head"></thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 1.5 保險管理 -->
+        <div id="insurance-mgmt" class="tab-content hidden h-full flex flex-col p-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex gap-4">
+                    <button onclick="addNewInsuranceMgmt()" class="btn bg-blue-600 hover:bg-blue-700"><i class="fas fa-plus"></i> 新增保險</button>
+                    <div id="edit-controls-insmgmt" class="hidden flex gap-4">
+                        <button onclick="saveChanges('insmgmt')" class="btn bg-red-600 hover:bg-red-700 animate-bounce"><i class="fas fa-save"></i> 儲存修改</button>
+                        <button onclick="cancelChanges('insmgmt')" class="btn bg-gray-500"><i class="fas fa-times"></i> 取消修改</button>
+                    </div>
+                </div>
+                <button onclick="exportInsMgmtExcel()" class="btn bg-green-600"><i class="fas fa-file-excel"></i> 匯出 Excel</button>
+            </div>
+            <div class="flex-1 overflow-auto border border-gray-300 rounded shadow bg-white relative">
+                <table class="custom-table min-w-full" id="ins-mgmt-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col sticky-col-header col-idx-0">修改</th>
+                            <th class="sticky-col sticky-col-header col-idx-1">檔案編號</th>
+                            <th class="sticky-col sticky-col-header col-idx-2">僱主中文名</th>
+                            <th class="col-std">僱主英文名</th><th class="col-narrow">僱主編號</th>
+                            <th class="col-std">僱主付款日期</th><th class="col-std">保險付款狀態</th><th class="col-std">客付保費</th><th class="col-std">保險付款方式</th>
+                            <th class="col-wide">付款備註 (如有)</th>
+                            <th class="col-std">保險公司</th><th class="col-narrow">Plan</th><th class="col-narrow">年期</th><th class="col-std">保險金額</th><th class="col-std">生效日期</th>
+                            <th class="col-std">中介保險號碼</th><th class="col-std">保單號碼</th><th class="col-narrow">已收回fee</th>
+                            <th class="col-remark-wide">備註</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ins-mgmt-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. 收據管理 -->
+        <div id="receipt-management" class="tab-content hidden h-full p-4">
+            <div class="bg-white p-6 rounded shadow"><h2 class="font-bold">收據管理</h2><p>待開發...</p></div>
+        </div>
+
+        <!-- 3. 勞工處紀錄表格 -->
+        <div id="labour-record" class="tab-content hidden h-full flex flex-col p-4">
+            <div class="flex justify-between mb-2">
+                 <div class="flex gap-2 items-center">
+                    <button onclick="copyData('labour')" class="btn bg-orange-500 hover:bg-orange-600"><i class="fas fa-copy"></i> 複製資料</button>
+                    <div class="bg-gray-200 px-3 py-2 rounded font-bold text-gray-700" id="labour-max-label">複製到: 無</div>
+                 </div>
+                 <div class="flex gap-2">
+                     <button onclick="exportLabourPDF()" class="btn bg-red-600"><i class="fas fa-file-pdf"></i> 匯出 PDF</button>
+                     <button onclick="exportLabourExcel()" class="btn bg-green-600"><i class="fas fa-file-excel"></i> 匯出 Excel</button>
+                 </div>
+            </div>
+            <div class="flex-1 overflow-auto border border-gray-300 rounded shadow bg-white relative">
+                <table class="custom-table" id="labour-table">
+                    <thead>
+                        <tr><th colspan="15" class="text-center text-xl bg-gray-200">求職者及僱主資料紀錄表<br><span class="text-sm">Record Sheet for Keeping Information of Job-seeker and Employer</span></th></tr>
+                        <tr>
+                            <th colspan="6" class="bg-group-blue text-center">求職者資料<br>Details of Job-seeker</th>
+                            <th colspan="4" class="bg-group-green text-center">僱主資料<br>Details of Employer</th>
+                            <th colspan="3" class="bg-group-yellow text-center">向求職者收取的佣金<br>Commission Received from Job-seeker</th>
+                            <th rowspan="2" class="bg-group-orange text-center">受僱日期<br>Date of Employment</th>
+                            <th rowspan="2" class="bg-group-red text-center">備註欄<br>Remarks</th>
+                        </tr>
+                        <tr>
+                            <th class="col-std">外傭姓名<br>FDH Name</th>
+                            <th class="col-std">外傭電話<br>FDH Contact</th>
+                            <th class="col-address">外傭地址<br>FDH Address</th>
+                            <th class="col-std">國籍<br>Nationality</th>
+                            <th class="col-wide">護照號碼<br>Passport No.</th>
+                            <th class="col-std">外傭身份證<br>FDH HKID</th>
+                            
+                            <th class="col-wide">僱主姓名<br>Employer Name</th>
+                            <th class="col-wide">僱主電話<br>Employer Contact</th>
+                            <th class="col-address">僱主地址<br>Employer Address</th>
+                            <th class="col-wide">僱主身份證<br>Employer HKID</th>
+                            
+                            <th class="col-narrow">佣金<br>Commission</th>
+                            <th class="col-narrow">收據編號<br>Receipt No.</th>
+                            <th class="col-std">日期<br>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="labour-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. 短護照提醒 -->
+        <div id="passport-alert" class="tab-content hidden h-full flex flex-col p-4">
+            <div class="alert-info-card">
+                (到期日前8個月，提醒外傭換領新護照)
+            </div>
+            <div class="flex justify-between mb-2">
+                <div class="flex gap-2 items-center">
+                    <button onclick="copyData('passport')" class="btn bg-orange-500 hover:bg-orange-600"><i class="fas fa-copy"></i> 複製資料</button>
+                    <button onclick="sortData('passport')" class="btn bg-purple-500 hover:bg-purple-600"><i class="fas fa-sort-amount-down"></i> 排序日期</button>
+                    <div class="bg-gray-200 px-3 py-2 rounded font-bold text-gray-700" id="passport-max-label">複製到: 無</div>
+                    <span id="passport-msg" class="hidden bg-red-100 text-red-800 px-2 py-1 rounded font-bold">找不到相關資料</span>
+                    
+                    <div id="edit-controls-passport" class="hidden flex gap-2 ml-4">
+                        <button onclick="saveChanges('passport')" class="btn bg-red-600 animate-bounce"><i class="fas fa-save"></i> 儲存修改</button>
+                        <button onclick="cancelChanges('passport')" class="btn bg-gray-500"><i class="fas fa-times"></i> 取消修改</button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 overflow-auto border border-gray-300 rounded shadow bg-white relative">
+                <table class="custom-table alert-table min-w-full" id="passport-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col sticky-col-header col-idx-0">修改</th>
+                            <th class="sticky-col sticky-col-header col-idx-1">檔案編號</th>
+                            <th class="sticky-col sticky-col-header col-idx-2">僱主姓名</th>
+                            <th class="col-std">外傭姓名</th>
+                            <th class="col-std">舊護照到期日</th>
+                            <th class="col-remind-helper">已提醒外傭<br>續期新護照</th>
+                            <th class="col-super-wide">備註</th>
+                        </tr>
+                    </thead>
+                    <tbody id="passport-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 5. 短簽證提醒 -->
+        <div id="visa-alert" class="tab-content hidden h-full flex flex-col p-4">
+            <div class="alert-info-card">
+                (到期日前8個月，提醒外傭換領新護照，然後再叫僱主辦理extend visa)
+            </div>
+            <div class="flex justify-between mb-2">
+                <div class="flex gap-2 items-center">
+                    <button onclick="copyData('visa')" class="btn bg-orange-500 hover:bg-orange-600"><i class="fas fa-copy"></i> 複製資料</button>
+                    <button onclick="sortData('visa')" class="btn bg-purple-500 hover:bg-purple-600"><i class="fas fa-sort-amount-down"></i> 排序日期</button>
+                    <div class="bg-gray-200 px-3 py-2 rounded font-bold text-gray-700" id="visa-max-label">複製到: 無</div>
+                    <span id="visa-msg" class="hidden bg-red-100 text-red-800 px-2 py-1 rounded font-bold">找不到相關資料</span>
+
+                    <div id="edit-controls-visa" class="hidden flex gap-2 ml-4">
+                        <button onclick="saveChanges('visa')" class="btn bg-red-600 animate-bounce"><i class="fas fa-save"></i> 儲存修改</button>
+                        <button onclick="cancelChanges('visa')" class="btn bg-gray-500"><i class="fas fa-times"></i> 取消修改</button>
+                    </div>
+                </div>
+                <button onclick="showVisaSentence()" class="btn bg-blue-500">短簽證句子</button>
+            </div>
+            <div class="flex-1 overflow-auto border border-gray-300 rounded shadow bg-white relative">
+                <table class="custom-table alert-table min-w-full" id="visa-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col sticky-col-header col-idx-0">修改</th>
+                            <th class="sticky-col sticky-col-header col-idx-1">檔案編號</th>
+                            <th class="sticky-col sticky-col-header col-idx-2">僱主姓名</th>
+                            <th class="col-std">外傭姓名</th>
+                            <th class="col-std">舊護照到期日</th>
+                            <th class="col-remind-helper">已提醒外傭<br>續期新護照</th>
+                            <th class="col-remind-emp">已提醒僱主<br>延長新簽證</th>
+                            <th class="col-remark-narrow">備註</th>
+                            <th class="col-std">申請狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="visa-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 6. 續約提醒 -->
+        <div id="renewal-alert" class="tab-content hidden h-full flex flex-col p-4">
+            <div class="alert-info-card">
+                (5個月前問外傭，再10天後問僱主。例如：8月完約，3月初問外傭，3月尾問僱主)
+            </div>
+            <div class="flex justify-between mb-2">
+                <div class="flex gap-2 items-center">
+                    <button onclick="addNewRenewal()" class="btn bg-blue-600"><i class="fas fa-plus"></i> 新增續約</button>
+                    <button onclick="copyData('renewal')" class="btn bg-orange-500 hover:bg-orange-600"><i class="fas fa-copy"></i> 複製資料</button>
+                    <button onclick="sortData('renewal')" class="btn bg-purple-500 hover:bg-purple-600"><i class="fas fa-sort-amount-down"></i> 排序日期</button>
+                    <div class="bg-gray-200 px-3 py-2 rounded font-bold text-gray-700" id="renewal-max-label">複製到: 無</div>
+                    <div id="edit-controls-renewal" class="hidden flex gap-2 ml-4">
+                        <button onclick="saveChanges('renewal')" class="btn bg-red-600 animate-bounce"><i class="fas fa-save"></i> 儲存修改</button>
+                        <button onclick="cancelChanges('renewal')" class="btn bg-gray-500"><i class="fas fa-times"></i> 取消修改</button>
+                    </div>
+                </div>
+                <button onclick="showRenewalMenu()" class="btn bg-blue-500">續約句子</button>
+            </div>
+            <div class="flex-1 overflow-auto border border-gray-300 rounded shadow bg-white relative">
+                <table class="custom-table alert-table min-w-full" id="renewal-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col sticky-col-header col-idx-0">修改</th>
+                            <th class="sticky-col sticky-col-header col-idx-1">檔案編號</th>
+                            <th class="sticky-col sticky-col-header col-idx-2">僱主姓名</th>
+                            <th class="col-std">外傭姓名</th>
+                            <th class="col-std">續約類別</th>
+                            <th class="col-std">合約完約日</th>
+                            <th class="col-wide">聯絡外傭狀態</th>
+                            <th class="col-remark-wide">外傭備註</th>
+                            <th class="col-wide">聯絡僱主狀態</th>
+                            <th class="col-remark-wide">僱主備註</th>
+                            <th class="col-remark-wide">公司備註</th>
+                            <th class="col-std">申請狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="renewal-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 7. 保險提醒 -->
+        <div id="insurance-alert" class="tab-content hidden h-full flex flex-col p-4">
+             <div class="alert-info-card">
+                (到期日前3個月，提醒僱主續保)
+             </div>
+             <div class="flex justify-between mb-2 items-center">
+                 <div class="flex gap-2 items-center flex-1">
+                    <button onclick="addNewInsurance()" class="btn bg-blue-600 whitespace-nowrap">新增保險</button>
+                    <button onclick="sortData('insurance')" class="btn bg-purple-500 hover:bg-purple-600 whitespace-nowrap"><i class="fas fa-sort-amount-down"></i> 排序日期</button>
+                    
+                    <div class="flex items-center gap-0 bg-gray-200 rounded overflow-hidden">
+                        <span class="font-bold text-gray-700 text-sm whitespace-nowrap px-2">Check到:</span>
+                        <input type="text" id="check-to-input" class="px-2 py-1 bg-white text-left outline-none border-l border-gray-300" style="width: 100px;">
+                    </div>
+
+                    <div id="edit-controls-insurance" class="hidden flex gap-2 ml-4">
+                        <button onclick="saveChanges('insurance')" class="btn bg-red-600 animate-bounce whitespace-nowrap"><i class="fas fa-save"></i> 儲存修改</button>
+                        <button onclick="cancelChanges('insurance')" class="btn bg-gray-500 whitespace-nowrap"><i class="fas fa-times"></i> 取消修改</button>
+                    </div>
+                 </div>
+             </div>
+            <div class="flex-1 overflow-auto border border-gray-300 rounded shadow bg-white relative">
+                <table class="custom-table alert-table min-w-full" id="insurance-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col sticky-col-header col-idx-0">修改</th>
+                            <th class="sticky-col sticky-col-header col-idx-1">檔案編號</th>
+                            <th class="sticky-col sticky-col-header col-idx-2">僱主姓名</th>
+                            <th class="col-std">外傭姓名</th>
+                            <th class="col-std">舊保險生效日</th>
+                            <th class="col-std">舊保險到期日</th>
+                            <th class="col-wide">類別</th>
+                            <th class="col-narrow">已提醒<br>僱主續保</th>
+                            <th class="col-remark-narrow">備註</th>
+                            <th class="col-std">申請狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody id="insurance-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal for Renewal Sentences -->
+    <div id="renewal-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="font-bold text-xl mb-4 text-center">選擇續約句子</h3>
+            <button class="modal-btn" onclick="showSentence('otherAgent')">其他Agent外傭</button>
+            <button class="modal-btn" onclick="showSentence('askHelper')">問外傭續約</button>
+            <button class="modal-btn" onclick="showSentence('askEmp1')">問僱主續約 (1)</button>
+            <button class="modal-btn" onclick="showSentence('askEmp2')">問僱主續約 (2)</button>
+            <button class="modal-btn" onclick="showSentence('success')">成功續約</button>
+            <button class="modal-btn" onclick="showSentence('move')">問搬屋</button>
+            <button class="modal-btn bg-gray-500 mt-4" onclick="document.getElementById('renewal-modal').classList.add('hidden')">關閉</button>
+        </div>
+    </div>
+
+    <script>
+        const rawColumns = [
+            "修改", "檔案編號", "僱主中文名", "僱主英文名", "僱主<br>身份證號碼", "僱主編號", "聯絡人性別", 
+            "協議備註<br>(如有)", "外傭全名", "外傭<br>身份證號碼", "外傭護照號碼", "外傭編號", "外傭國籍", 
+            "申請外傭類別", "負責分店", "負責同事", "查詢日期", "簽約日期", "簽約相隔日數", 
+            "簽約金額", "收據編號", "收款日期", "付款狀態", "付款方式", "顧客備註<br>(如有)", 
+            "買了保險", "買了香港驗身", "原價", "實收金額", "純利", "學校編號", 
+            "學校名稱", "學校付款日期", "學校付款方式", "學校備註<br>(如有)", "學校付款金額", "大牌編號", 
+            "大牌名稱", "大牌<br>交合約日期", "大牌付款日期", "大牌付款方式", "大牌備註<br>(如有)", "大牌付款金額", 
+            "領事館<br>遞交日期", "領事館備註 (如有)", "領事館<br>批出日期", "最早可遞交<br>入境處日期", "入境處<br>遞交日期", "確收信<br>接收日期", 
+            "補交信<br>接收日期", "補交文件<br>遞交日期", "批准信<br>接收日期", "簽證領取日期", "入境處備註 (如有)", "誰取簽證", 
+            "OCS／DHL (1)<br>備註 (如有)", "OCS／DHL (2)<br>備註 (如有)", "簽證和合約<br>寄出日期", "學校手續<br>完成日期", "入境日期", 
+            "簽證開始日", "真正上班日", "領事館<br>相隔日數", "入境處<br>相隔日數", "完約整體<br>(領事館 至 新簽證)", "學校辦理<br>(郵寄 至 完成)", 
+            "海外整體<br>(領事館 至 完成)", "合約完約日", "護照有效期至", "短日子計算", 
+            "短日子類別", "如是續約/回頭客/回頭傭<br>(請填新檔案號碼)", "合約開始日", "終止外傭日期", "終止相隔日數", "終止相隔月數", 
+            "終止原因", "僱主性別", "僱主國籍", "伴侶姓名", "伴侶電話號碼", "僱主電話號碼", 
+            "僱主居住地址", "職業", "僱主月薪", "僱主出生日期", "僱主<br>聘請時年齡", "人生第一次<br>聘請外傭？", 
+            "多少位外傭<br>一起工作", "顧客如何<br>得知我們", "僱主舊檔號 (如有)", "外傭電話號碼", "外傭合約月薪", "外傭家鄉地址", 
+            "外傭出生日期", "外傭<br>被聘時年齡", "兩人相差歲數<br>(僱主 減 外傭)", "合約號碼", "佣金", "外傭收據編號", 
+            "佣金日期", "外傭如何<br>得知我們", "外傭舊檔號 (如有)", "香港驗身日期", "驗身方式<br>(診卡號碼)", "僱主備註", 
+            "外傭備註", "公司備註", "申請狀態"
+        ];
+        
+        const dataKeys = rawColumns.slice(1);
+        const insMgmtCols = [
+            "檔案編號", "僱主中文名", "僱主英文名", "僱主編號", "僱主付款日期", "保險付款狀態", "客付保費", "保險付款方式", "付款備註 (如有)", 
+            "保險公司", "Plan", "年期", "保險金額", "生效日期", "中介保險號碼", "保單號碼", "已收回fee", "備註"
+        ];
+        
+        const dropdownOptions = {
+            "外傭國籍": ["菲律賓", "印尼", "其他"],
+            "申請外傭類別": ["死亡 (在港)", "移民 (在港)", "財政 (在港)", "內續約 (我們)", "外續約 (直聘)", "斷約轉完約 (在港)", "完約 (在港)", "完約轉海外", "斷約轉海外", "我們海外", "學校海外", "直聘海外", "直聘完約 (在港)", "直聘完約轉海外", "直聘斷約轉完約 (在港)", "直聘斷約轉海外", "直聘死亡 (在港)", "直聘移民 (在港)", "直聘財政 (在港)"],
+            "付款狀態": ["等待付款", "等待查核", "只付部分", "全部已付"],
+            "付款方式": ["更換", "現金", "公司中銀", "公司中銀支票", "公司PayMe", "個人滙豐", "其他"],
+            "買了保險": ["僱主買", "經公司買", "公司舊保險改名"],
+            "買了香港驗身": ["無", "已包括", "額外再買", "已包括普通+額外再買"],
+            "學校付款方式": ["現金", "公司中銀", "公司中銀支票", "公司PayMe", "個人滙豐", "7-11微信支付", "7-11支付寶", "其他"],
+            "大牌付款方式": ["現金", "公司中銀", "公司中銀支票", "公司PayMe", "個人滙豐", "7-11微信支付", "7-11支付寶", "其他"],
+            "僱主性別": ["男", "女"],
+            "聯絡人性別": ["男", "女"], 
+            "人生第一次<br>聘請外傭？": ["首次", "更換", "增聘", "續約"],
+            "僱主國籍": ["香港", "內地", "台灣", "日本", "韓國", "新加坡", "其他"],
+            "顧客如何<br>得知我們": ["HelloToby", "Facebook", "Google", "YouTube", "內續約", "僱主新外傭介紹", "我們舊外傭介紹", "回頭客", "舊客介紹", "街客", "其他"],
+            "外傭如何<br>得知我們": ["回頭傭", "HelperChoice", "Facebook", "舊外傭介紹", "內續約", "直聘", "學校", "蛇頭", "其他"],
+            "申請狀態": ["辦理中", "已完成", "已退款", "已取消", "其他"]
+        };
+
+        const dateFields = [
+            "查詢日期", "簽約日期", "收款日期", "學校付款日期", "大牌交合約日期", "大牌付款日期", "領事館<br>遞交日期", 
+            "領事館<br>批出日期", "最早可遞交<br>入境處日期", "入境處<br>遞交日期", "確收信<br>接收日期", "補交信<br>接收日期", 
+            "補交文件<br>遞交日期", "批准信<br>接收日期", "簽證領取日期", "簽證和合約<br>寄出日期", "學校手續<br>完成日期", 
+            "入境日期", "簽證開始日", "真正上班日", "合約完約日", "護照有效期至", "合約開始日", "終止外傭日期", 
+            "僱主出生日期", "外傭出生日期", "香港驗身日期", "佣金日期", "僱主付款日期", "生效日期"
+        ];
+
+        const groups = [
+            { start: "僱主英文名", end: "申請外傭類別", label: "協議區", colorClass: "bg-group-red" },
+            { start: "負責分店", end: "簽約金額", label: "簽約區", colorClass: "bg-group-orange" },
+            { start: "收據編號", end: "純利", label: "簽約區", colorClass: "bg-group-yellow" },
+            { start: "學校編號", end: "學校付款金額", label: "學校付款區", colorClass: "bg-group-green" },
+            { start: "大牌編號", end: "大牌付款金額", label: "大牌付款區", colorClass: "bg-group-cyan" },
+            { start: "領事館<br>遞交日期", end: "誰取簽證", label: "香港申請進度區", colorClass: "bg-group-blue" },
+            { start: "OCS／DHL (1)<br>備註 (如有)", end: "學校手續<br>完成日期", label: "海外申請進度區", colorClass: "bg-group-purple" },
+            { start: "入境日期", end: "真正上班日", label: "上班區", colorClass: "bg-group-red" },
+            { start: "領事館<br>相隔日數", end: "海外整體<br>(領事館 至 完成)", label: "日子統計區", colorClass: "bg-group-orange" },
+            { start: "合約完約日", end: "短日子類別", label: "到期日提醒區", colorClass: "bg-group-yellow" },
+            { start: "如是續約/回頭客/回頭傭<br>(請填新檔案號碼)", end: "終止原因", label: "兩年後的情況回顧區", colorClass: "bg-group-green" },
+            { start: "僱主性別", end: "僱主舊檔號 (如有)", label: "僱主資料區", colorClass: "bg-group-cyan" },
+            { start: "外傭電話號碼", end: "外傭舊檔號 (如有)", label: "香港申請進度區", colorClass: "bg-group-blue" },
+            { start: "香港驗身日期", end: "驗身方式<br>(診卡號碼)", label: "驗身區", colorClass: "bg-group-purple" },
+            { start: "僱主備註", end: "申請狀態", label: "備註區", colorClass: "bg-group-red" },
+        ];
+
+        let appData = { files: [], passportAlerts: [], visaAlerts: [], renewalAlerts: [], insuranceAlerts: [], labourRecords: [], insuranceMgmt: [] };
+        let currentEditingRowId = null; 
+        let currentEditingTab = null;
+        let inactivityTimer = null;
+        let tempRowData = null;
+
+        window.onload = function() {
+            loadData();
+            switchTab('file-management'); 
+            attachCrosshairListeners();
+        };
+
+        function loadData() {
+            const savedData = localStorage.getItem('agencyData_v1_14'); 
+            if (savedData) {
+                appData = JSON.parse(savedData);
+            } else {
+                const old = localStorage.getItem('agencyData_v1_13');
+                if(old) appData = {...JSON.parse(old)};
+            }
+            if(!appData.insuranceMgmt) appData.insuranceMgmt=[];
+            
+            // Recalculate derived fields on load to ensure copyData works correctly
+            appData.files.forEach(f => {
+                if(!f["申請狀態"]) f["申請狀態"] = "辦理中"; 
+                calculateFields(f); 
+            });
+            appData.visaAlerts.forEach(f => { if(!f.status) f.status = "僱主自己搞"; });
+            appData.renewalAlerts.forEach(f => { if(!f.status) f.status = "僱主自己搞"; });
+            appData.insuranceAlerts.forEach(f => { if(!f.status) f.status = "僱主自己搞"; });
+            updateMaxLabels();
+        }
+
+        function saveData() {
+            localStorage.setItem('agencyData_v1_14', JSON.stringify(appData));
+            updateStatus("已儲存");
+            updateMaxLabels();
+        }
+
+        function updateStatus(msg) {
+            const el = document.getElementById('auto-save-status');
+            if(el) { el.innerText = msg; setTimeout(()=>el.innerText="", 2000); }
+        }
+
+        function updateMaxLabels() {
+            document.getElementById('passport-max-label').innerText = "複製到: " + getMaxID('passport');
+            document.getElementById('visa-max-label').innerText = "複製到: " + getMaxID('visa');
+            document.getElementById('renewal-max-label').innerText = "複製到: " + getMaxID('renewal');
+            document.getElementById('labour-max-label').innerText = "紀錄數: " + appData.labourRecords.length;
+        }
+
+        function switchTab(tabId) {
+            if(currentEditingRowId !== null) return alert("請先儲存或取消目前的修改。");
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.remove('hidden');
+            const tabs = ['file-management', 'insurance-mgmt', 'receipt-management', 'labour-record', 'passport-alert', 'visa-alert', 'renewal-alert', 'insurance-alert'];
+            const idx = tabs.indexOf(tabId);
+            if(idx !== -1) document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+            if (tabId === 'file-management') renderMainTable();
+            else if (tabId === 'insurance-mgmt') renderInsMgmtTable();
+            else if (tabId === 'labour-record') renderLabourTable();
+            else if (tabId === 'passport-alert') renderPassportAlertTable();
+            else if (tabId === 'visa-alert') renderVisaAlertTable();
+            else if (tabId === 'renewal-alert') renderRenewalAlertTable();
+            else if (tabId === 'insurance-alert') renderInsuranceAlertTable();
+            setTimeout(attachCrosshairListeners, 100);
+        }
+
+        function diffDays(d1, d2) {
+            if(!d1 || !d2) return "";
+            const t1 = new Date(d1).getTime();
+            const t2 = new Date(d2).getTime();
+            return Math.floor((t1 - t2) / (1000 * 3600 * 24));
+        }
+        function getAge(dateStr, birthStr) {
+            if(!dateStr || !birthStr) return "";
+            const d1 = new Date(dateStr);
+            const d2 = new Date(birthStr);
+            const diff = d1.getTime() - d2.getTime();
+            return (diff / (1000 * 3600 * 24 * 365.25)).toFixed(1);
+        }
+
+        function calculateFields(row) {
+            row["簽約相隔日數"] = diffDays(row["簽約日期"], row["查詢日期"]);
+            row["領事館<br>相隔日數"] = diffDays(row["領事館<br>批出日期"], row["領事館<br>遞交日期"]);
+            row["入境處<br>相隔日數"] = diffDays(row["批准信<br>接收日期"], row["入境處<br>遞交日期"]);
+            row["學校辦理<br>(郵寄 至 完成)"] = diffDays(row["學校手續<br>完成日期"], row["簽證和合約<br>寄出日期"]);
+            
+            const consDays = parseFloat(row["領事館<br>相隔日數"]) || 0;
+            const immDays = parseFloat(row["入境處<br>相隔日數"]) || 0;
+            const schoolDays = parseFloat(row["學校辦理<br>(郵寄 至 完成)"]) || 0;
+            
+            row["完約整體<br>(領事館 至 新簽證)"] = (consDays + immDays) || "";
+            row["海外整體<br>(領事館 至 完成)"] = (consDays + immDays + schoolDays) || "";
+
+            const termDays = diffDays(row["終止外傭日期"], row["合約開始日"]);
+            row["終止相隔日數"] = termDays;
+            row["終止相隔月數"] = termDays ? (termDays / 30).toFixed(1) : "";
+
+            const shortDays = diffDays(row["護照有效期至"], row["合約完約日"]);
+            row["短日子計算"] = shortDays;
+            if(shortDays === "") row["短日子類別"] = "";
+            else if(shortDays < 0) row["短日子類別"] = "短簽證";
+            else if(shortDays < 210) row["短日子類別"] = "短護照";
+            else row["短日子類別"] = "正常";
+
+            row["僱主<br>聘請時年齡"] = getAge(row["簽約日期"], row["僱主出生日期"]);
+            row["外傭<br>被聘時年齡"] = getAge(row["簽約日期"], row["外傭出生日期"]);
+            const empAge = parseFloat(row["僱主<br>聘請時年齡"]);
+            const hlpAge = parseFloat(row["外傭<br>被聘時年齡"]);
+            if(!isNaN(empAge) && !isNaN(hlpAge)) row["兩人相差歲數<br>(僱主 減 外傭)"] = (empAge - hlpAge).toFixed(1);
+            else row["兩人相差歲數<br>(僱主 減 外傭)"] = "";
+        }
+
+        function updateAlerts(fileId, field, value) {
+            const pp = appData.passportAlerts.find(a => a.fileNo === fileId);
+            const vs = appData.visaAlerts.find(a => a.fileNo === fileId);
+            const rn = appData.renewalAlerts.find(a => a.fileNo === fileId);
+            
+            if(field === "護照有效期至") {
+                if(pp) pp.expiryDate = value;
+                if(vs) vs.expiryDate = value;
+            }
+            if(field === "合約完約日") {
+                if(rn) rn.expiryDate = value;
+            }
+        }
+
+        function enableEdit(tab, idx) {
+            if(currentEditingRowId !== null) return alert("請先儲存或取消目前的修改。");
+            currentEditingRowId = idx; currentEditingTab = tab;
+            
+            // Deep copy backup
+            if(tab === 'file') tempRowData = JSON.parse(JSON.stringify(appData.files[idx]));
+            else if(tab === 'insmgmt') tempRowData = JSON.parse(JSON.stringify(appData.insuranceMgmt[idx]));
+            else if(tab === 'passport') tempRowData = JSON.parse(JSON.stringify(appData.passportAlerts[idx]));
+            else if(tab === 'visa') tempRowData = JSON.parse(JSON.stringify(appData.visaAlerts[idx]));
+            else if(tab === 'renewal') tempRowData = JSON.parse(JSON.stringify(appData.renewalAlerts[idx]));
+            else if(tab === 'insurance') tempRowData = JSON.parse(JSON.stringify(appData.insuranceAlerts[idx]));
+
+            const container = document.getElementById(tab === 'file' ? 'edit-controls-file' : (tab === 'insmgmt' ? 'edit-controls-insmgmt' : `edit-controls-${tab}`));
+            if(container) container.classList.remove('hidden');
+
+            const btn = document.getElementById(`btn-edit-${tab}-${idx}`);
+            if(btn) btn.innerHTML = `<i class="fas fa-pen-nib text-red-500"></i>`;
+
+            const isAlert = ['passport','visa','renewal','insurance'].includes(tab);
+            document.querySelectorAll(`[id^="input-${tab}-${idx}-"]`).forEach(el => {
+                const idParts = el.id.split('-');
+                const fieldName = idParts.slice(3).join('-');
+                if(isAlert && (fieldName === 'fileNo' || fieldName === 'empName' || fieldName === 'fdhName' || fieldName === 'expiryDate' || fieldName === 'startDate' || fieldName === 'endDate')) return;
+                
+                el.readOnly = false; el.disabled = false; el.classList.add('editing-input');
+            });
+            resetTimer();
+        }
+
+        function saveChanges(tab) {
+            if(currentEditingRowId === null) return;
+            const idx = currentEditingRowId;
+            
+            if(tab === 'file') {
+                 dataKeys.forEach(key => { 
+                     const el = document.getElementById(`input-file-${idx}-${key}`); 
+                     if(el) {
+                         appData.files[idx][key] = el.value;
+                         if(key === "護照有效期至" || key === "合約完約日") updateAlerts(appData.files[idx]["檔案編號"], key, el.value);
+                     }
+                 });
+                 calculateFields(appData.files[idx]);
+                 renderMainTable();
+            } else if(tab === 'insmgmt') {
+                 insMgmtCols.forEach(col => { const el = document.getElementById(`input-insmgmt-${idx}-${col}`); if(el) appData.insuranceMgmt[idx][col] = (el.type==='checkbox' ? el.checked : el.value); });
+            } else {
+                const list = (tab==='passport') ? appData.passportAlerts : (tab==='visa') ? appData.visaAlerts : (tab==='renewal') ? appData.renewalAlerts : appData.insuranceAlerts;
+                document.querySelectorAll(`[id^="input-${tab}-${idx}-"]`).forEach(input => {
+                    const idParts = input.id.split('-');
+                    const keyPart = idParts.slice(3).join('-');
+                    if(!input.disabled) {
+                        if(input.type === 'checkbox') list[idx][keyPart] = input.checked;
+                        else list[idx][keyPart] = input.value;
+                    }
+                });
+            }
+            saveData(); endEdit();
+        }
+
+        function cancelChanges(tab) {
+            if(currentEditingRowId === null) return;
+            if(tab === 'file') appData.files[currentEditingRowId] = tempRowData;
+            else if(tab === 'insmgmt') appData.insuranceMgmt[currentEditingRowId] = tempRowData;
+            else if(tab === 'passport') appData.passportAlerts[currentEditingRowId] = tempRowData;
+            else if(tab === 'visa') appData.visaAlerts[currentEditingRowId] = tempRowData;
+            else if(tab === 'renewal') appData.renewalAlerts[currentEditingRowId] = tempRowData;
+            else if(tab === 'insurance') appData.insuranceAlerts[currentEditingRowId] = tempRowData;
+            
+            // Re-render
+            endEdit(); // Close edit mode first
+            if(tab==='file') renderMainTable();
+            else if(tab==='insmgmt') renderInsMgmtTable();
+            else switchTab(tab + '-alert'); 
+        }
+
+        function endEdit() {
+            if(currentEditingRowId === null) return;
+            const tab = currentEditingTab; const idx = currentEditingRowId;
+            document.querySelectorAll(`[id^="input-${tab}-${idx}-"]`).forEach(el => { el.readOnly = true; el.disabled = true; el.classList.remove('editing-input'); });
+            const container = document.getElementById(tab === 'file' ? 'edit-controls-file' : (tab === 'insmgmt' ? 'edit-controls-insmgmt' : `edit-controls-${tab}`));
+            if(container) container.classList.add('hidden');
+            const btn = document.getElementById(`btn-edit-${tab}-${idx}`);
+            if(btn) btn.innerHTML = `<i class="fas fa-edit"></i>`;
+            currentEditingRowId = null; currentEditingTab = null;
+            if(inactivityTimer) clearTimeout(inactivityTimer);
+        }
+
+        function handleInput() { 
+            if(event.target.tagName === 'TEXTAREA') { event.target.style.height='auto'; event.target.style.height=event.target.scrollHeight+'px'; }
+            resetTimer(); 
+        }
+        function resetTimer() { if(inactivityTimer) clearTimeout(inactivityTimer); inactivityTimer = setTimeout(() => { if(currentEditingRowId !== null) { saveChanges(currentEditingTab); updateStatus("閒置自動儲存"); } }, 60000); }
+        function autoResizeTextareas() { document.querySelectorAll('textarea').forEach(tx => { tx.style.height='auto'; tx.style.height=tx.scrollHeight+'px'; }); }
+
+        function getRowClass(status) {
+            if(status === '已完成' || status === '已收款') return 'row-blue';
+            if(status === '已退款' || status === '已取消') return 'row-red';
+            if(status === '其他' || status === '外傭已終止') return 'row-dark-gray';
+            return ''; 
+        }
+
+        function getCellStyle(key) {
+             let cls = "";
+             if(key.includes("備註") && !key.includes("OCS") && !key.includes("大牌") && !key.includes("領事館") && !key.includes("入境處") && !key.includes("學校") && !key.includes("顧客")) cls += ' col-remark-wide';
+             if(key.includes("協議備註") || key.includes("顧客備註") || key.includes("學校備註") || key.includes("大牌備註") || key.includes("領事館備註") || key.includes("入境處備註") || key.includes("僱主備註") || key.includes("外傭備註") || key.includes("公司備註")) cls += ' col-remark-wide';
+             if(key.includes("OCS")) cls += ' col-plus-chars-2';
+             if(key.includes("完約整體") || key.includes("如是續約")) cls += ' col-plus-chars-3';
+             if(key.includes("海外整體")) cls += ' col-plus-chars-2';
+             if(key.includes("相差歲數")) cls += ' col-plus-chars-2';
+             if(key.includes("居住地址") || key.includes("家鄉地址")) cls += ' col-address';
+             if(key.includes("終止原因")) cls += ' col-super-wide';
+             if(key === "聯絡人性別" || key === "外傭國籍" || key === "付款狀態" || key === "付款方式" || key === "僱主性別" || key === "僱主國籍" || key === "人生第一次<br>聘請外傭？") cls += ' col-fit-text';
+             else if(dropdownOptions[key]) cls += ' col-wide';
+             else if(dateFields.includes(key)) cls += ' col-std';
+             else if(key === "如是續約/回頭客/回頭傭<br>(請填新檔案號碼)") cls += ' col-len-12';
+             else if(!cls) cls = 'col-std';
+             return cls;
+        }
+
+        function renderMainTable() {
+            const thead = document.getElementById('table-head');
+            const tbody = document.getElementById('table-body');
+            
+            if (!thead.innerHTML || true) { 
+                let groupHtml = `<tr class="bg-gray-200">`;
+                let headHtml = `<tr>`;
+                groupHtml += `<th rowspan="2" class="sticky-col sticky-col-header col-idx-0 z-50">修改</th><th rowspan="2" class="sticky-col sticky-col-header col-idx-1 z-50">檔案編號</th><th rowspan="2" class="sticky-col sticky-col-header col-idx-2 z-50 col-std sticky-group-header">僱主中文名</th>`;
+                let colIdx = 3;
+                while (colIdx < rawColumns.length) {
+                    const colName = rawColumns[colIdx];
+                    let group = groups.find(g => g.start === colName);
+                    if (group) {
+                        let endIdx = rawColumns.indexOf(group.end);
+                        if(endIdx === -1) endIdx = colIdx;
+                        let span = endIdx - colIdx + 1;
+                        groupHtml += `<th colspan="${span}" class="${group.colorClass} text-center border-b-2 border-gray-300 text-gray-800">${group.label}</th>`;
+                        for(let i=colIdx; i<=endIdx; i++) headHtml += `<th class="col-idx-${i}">${rawColumns[i]}</th>`;
+                        colIdx += span;
+                    } else {
+                        headHtml += `<th class="col-idx-${colIdx}">${colName}</th>`; groupHtml += `<th class="bg-gray-100"></th>`; colIdx++;
+                    }
+                }
+                thead.innerHTML = groupHtml + `</tr>` + headHtml + `</tr>`;
+            }
+
+            tbody.innerHTML = '';
+            appData.files.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.dataset.rowIndex = index;
+                tr.className = getRowClass(row["申請狀態"]);
+                
+                let html = `<td class="sticky-col col-idx-0 text-center border-r shadow-sm"><button id="btn-edit-file-${index}" onclick="enableEdit('file', ${index})" class="text-blue-600 hover:text-blue-800"><i class="fas fa-edit"></i></button></td>`;
+                dataKeys.forEach((key, kIndex) => {
+                    const absIdx = kIndex + 1;
+                    let cls = `col-${absIdx}`;
+                    if(absIdx === 1) cls += ' sticky-col col-idx-1 border-r col-file-no';
+                    if(absIdx === 2) cls += ' sticky-col col-idx-2 border-r';
+                    cls += " " + getCellStyle(key);
+                    
+                    let content = '';
+                    if(dropdownOptions[key]) {
+                        content = `<select id="input-file-${index}-${key}" disabled onchange="checkOther(this)" class="appearance-none w-full"><option value="${row[key]||''}">${row[key]||''}</option>`;
+                        dropdownOptions[key].forEach(opt => content += `<option value="${opt}">${opt}</option>`);
+                        content += `</select>`;
+                    } else if (dateFields.includes(key)) {
+                        // Date input trick: start as text, switch to date on focus
+                        content = `<input type="text" id="input-file-${index}-${key}" value="${row[key]||''}" readonly onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" onchange="handleInput()">`;
+                    } else {
+                        content = `<textarea id="input-file-${index}-${key}" readonly oninput="handleInput()" rows="1">${row[key]||''}</textarea>`;
+                    }
+                    html += `<td class="${cls}">${content}</td>`;
+                });
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+            autoResizeTextareas();
+        }
+
+        // --- Alerts Renderers ---
+        function renderPassportAlertTable() {
+            const tbody = document.getElementById('passport-body'); tbody.innerHTML = '';
+            appData.passportAlerts.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="sticky-col col-idx-0"><button id="btn-edit-passport-${index}" onclick="enableEdit('passport', ${index})" class="text-blue-600"><i class="fas fa-edit"></i></button></td><td class="sticky-col col-idx-1">${item.fileNo}</td><td class="sticky-col col-idx-2">${item.empName}</td><td class="col-std">${item.fdhName||''}</td><td><input class="w-full text-center" id="input-passport-${index}-expiryDate" value="${item.expiryDate||''}" readonly></td><td class="text-center col-remind-helper"><input type="checkbox" id="input-passport-${index}-reminded" ${item.reminded?'checked':''} disabled></td><td class="col-remark-wide"><textarea id="input-passport-${index}-remarks" rows="1" readonly>${item.remarks||''}</textarea></td>`;
+                tbody.appendChild(tr);
+            });
+        }
+        function renderVisaAlertTable() {
+             const tbody = document.getElementById('visa-body'); tbody.innerHTML = '';
+             appData.visaAlerts.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = getRowClass(item.status);
+                tr.innerHTML = `<td class="sticky-col col-idx-0"><button id="btn-edit-visa-${index}" onclick="enableEdit('visa', ${index})" class="text-blue-600"><i class="fas fa-edit"></i></button></td><td class="sticky-col col-idx-1">${item.fileNo}</td><td class="sticky-col col-idx-2">${item.empName}</td><td class="col-std">${item.fdhName||''}</td><td><input class="w-full text-center" id="input-visa-${index}-expiryDate" value="${item.expiryDate||''}" readonly></td><td class="text-center col-remind-helper"><input type="checkbox" id="input-visa-${index}-remindedHelper" ${item.remindedHelper?'checked':''} disabled></td><td class="text-center col-remind-emp"><input type="checkbox" id="input-visa-${index}-remindedEmp" ${item.remindedEmp?'checked':''} disabled></td><td class="col-remark-narrow"><textarea id="input-visa-${index}-remarks" rows="1" readonly>${item.remarks||''}</textarea></td><td><select id="input-visa-${index}-status" disabled class="w-full appearance-none text-center"><option value="${item.status||''}">${item.status||''}</option><option>僱主自己搞</option><option>已收款</option><option>已退款</option><option>已取消</option><option>外傭已終止</option><option>其他</option></select></td>`;
+                tbody.appendChild(tr);
+             });
+        }
+        function renderRenewalAlertTable() {
+             const tbody = document.getElementById('renewal-body'); tbody.innerHTML = '';
+             appData.renewalAlerts.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = getRowClass(item.status);
+                tr.innerHTML = `<td class="sticky-col col-idx-0"><button id="btn-edit-renewal-${index}" onclick="enableEdit('renewal', ${index})" class="text-blue-600"><i class="fas fa-edit"></i></button></td><td class="sticky-col col-idx-1"><input id="input-renewal-${index}-fileNo" value="${item.fileNo}" readonly class="w-full"></td><td class="sticky-col col-idx-2"><input id="input-renewal-${index}-empName" value="${item.empName}" readonly class="w-full"></td><td class="col-std"><input id="input-renewal-${index}-fdhName" value="${item.fdhName||''}" readonly class="w-full"></td><td><select id="input-renewal-${index}-renewalType" disabled class="w-full appearance-none text-center"><option>${item.renewalType||''}</option><option>我們外傭</option><option>其他Agent外傭</option></select></td><td><input class="w-full text-center" id="input-renewal-${index}-expiryDate" value="${item.expiryDate||''}" readonly></td>
+                <td><select id="input-renewal-${index}-helperStatus" disabled class="w-full appearance-none text-center"><option value="${item.helperStatus||''}">${item.helperStatus||''}</option><option value="等回覆">等回覆</option><option value="會續約">會續約</option><option value="考慮中">考慮中</option><option value="不續約+整定CV">不續約+整定CV</option><option value="聯絡唔到外傭">聯絡唔到外傭</option></select></td><td class="col-remark-wide"><textarea id="input-renewal-${index}-helperRemarks" rows="1" readonly>${item.helperRemarks||''}</textarea></td>
+                <td><select id="input-renewal-${index}-empStatus" disabled class="w-full appearance-none text-center"><option value="${item.empStatus||''}">${item.empStatus||''}</option><option value="等回覆">等回覆</option><option value="自行續約">自行續約</option><option value="考慮中">考慮中</option><option value="不續約+整定CV">不續約+整定CV</option><option value="聯絡唔到僱主">聯絡唔到僱主</option></select></td><td class="col-remark-wide"><textarea id="input-renewal-${index}-empRemarks" rows="1" readonly>${item.empRemarks||''}</textarea></td><td class="col-remark-wide"><textarea id="input-renewal-${index}-compRemarks" rows="1" readonly>${item.compRemarks||''}</textarea></td><td><select id="input-renewal-${index}-status" disabled class="w-full appearance-none text-center"><option value="${item.status||''}">${item.status||''}</option><option>僱主自己搞</option><option>已收款</option><option>已退款</option><option>已取消</option><option>外傭已終止</option><option>其他</option></select></td>`;
+                tbody.appendChild(tr);
+             });
+        }
+        function renderInsuranceAlertTable() {
+             const tbody = document.getElementById('insurance-body'); tbody.innerHTML = '';
+             appData.insuranceAlerts.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = getRowClass(item.status);
+                tr.innerHTML = `<td class="sticky-col col-idx-0"><button id="btn-edit-insurance-${index}" onclick="enableEdit('insurance', ${index})" class="text-blue-600"><i class="fas fa-edit"></i></button></td><td class="sticky-col col-idx-1"><input id="input-insurance-${index}-fileNo" value="${item.fileNo}" readonly class="w-full"></td><td class="sticky-col col-idx-2"><input id="input-insurance-${index}-empName" value="${item.empName}" readonly class="w-full"></td><td class="col-std"><input id="input-insurance-${index}-fdhName" value="${item.fdhName||''}" readonly class="w-full"></td><td><input type="text" onfocus="this.type='date'" id="input-insurance-${index}-startDate" value="${item.startDate||''}" readonly></td><td><input type="text" onfocus="this.type='date'" id="input-insurance-${index}-endDate" value="${item.endDate||''}" readonly></td>
+                <td class="col-wide"><select id="input-insurance-${index}-type" disabled class="w-full appearance-none text-center"><option value="${item.type||''}">${item.type||''}</option><option value="只買一年保險">只買一年保險</option><option value="2年保險+無拍齊簽證日期">2年保險+無拍齊簽證日期</option><option value="1年保險+無拍齊簽證日期">1年保險+無拍齊簽證日期</option><option value="買2年保險但無買續約">買2年保險但無買續約</option><option value="買1年保險但無買續約">買1年保險但無買續約</option></select></td>
+                <td class="text-center"><input type="checkbox" id="input-insurance-${index}-reminded" ${item.reminded?'checked':''} disabled></td><td class="col-remark-narrow"><textarea id="input-insurance-${index}-remarks" rows="1" readonly>${item.remarks||''}</textarea></td><td><select id="input-insurance-${index}-status" disabled class="w-full appearance-none text-center"><option value="${item.status||''}">${item.status||''}</option><option>僱主自己搞</option><option>已收款</option><option>已退款</option><option>已取消</option><option>外傭已終止</option><option>其他</option></select></td>`;
+                tbody.appendChild(tr);
+             });
+        }
+        function renderInsMgmtTable() {
+            const tbody = document.getElementById('ins-mgmt-body'); tbody.innerHTML = '';
+            appData.insuranceMgmt.forEach((row, index) => {
+                 const tr = document.createElement('tr');
+                 let html = `<td class="sticky-col col-idx-0 text-center border-r shadow-sm"><button id="btn-edit-insmgmt-${index}" onclick="enableEdit('insmgmt', ${index})" class="text-blue-600"><i class="fas fa-edit"></i></button></td>
+                    <td class="sticky-col col-idx-1"><textarea id="input-insmgmt-${index}-檔案編號" readonly rows="1">${row["檔案編號"]||''}</textarea></td><td class="sticky-col col-idx-2"><textarea id="input-insmgmt-${index}-僱主中文名" readonly rows="1">${row["僱主中文名"]||''}</textarea></td><td><textarea id="input-insmgmt-${index}-僱主英文名" readonly rows="1">${row["僱主英文名"]||''}</textarea></td><td><textarea id="input-insmgmt-${index}-僱主編號" readonly rows="1">${row["僱主編號"]||''}</textarea></td><td><input type="text" onfocus="this.type='date'" id="input-insmgmt-${index}-僱主付款日期" value="${row["僱主付款日期"]||''}" readonly></td>
+                    <td><select id="input-insmgmt-${index}-保險付款狀態" disabled class="w-full appearance-none text-center"><option value="${row["保險付款狀態"]||''}">${row["保險付款狀態"]||''}</option><option value="等待付款">等待付款</option><option value="等待查核">等待查核</option><option value="只付部分">只付部分</option><option value="全部已付">全部已付</option></select></td>
+                    <td><textarea id="input-insmgmt-${index}-客付保費" readonly rows="1">${row["客付保費"]||''}</textarea></td><td><select id="input-insmgmt-${index}-保險付款方式" disabled class="w-full appearance-none text-center" onchange="checkOther(this)"><option value="${row["保險付款方式"]||''}">${row["保險付款方式"]||''}</option><option value="現金">現金</option><option value="公司中銀">公司中銀</option><option value="公司中銀支票">公司中銀支票</option><option value="公司PayMe">公司PayMe</option><option value="個人滙豐">個人滙豐</option><option value="其他">其他</option></select></td><td class="col-wide"><textarea id="input-insmgmt-${index}-付款備註 (如有)" readonly rows="1">${row["付款備註 (如有)"]||''}</textarea></td>
+                    <td><select id="input-insmgmt-${index}-保險公司" disabled class="w-full appearance-none text-center" onchange="checkOther(this)"><option value="${row["保險公司"]||''}">${row["保險公司"]||''}</option><option value="祥昇保險">祥昇保險</option><option value="其他">其他</option></select></td><td><select id="input-insmgmt-${index}-Plan" disabled class="w-full appearance-none text-center" onchange="checkOther(this)"><option value="${row["Plan"]||''}">${row["Plan"]||''}</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="其他">其他</option></select></td><td><select id="input-insmgmt-${index}-年期" disabled class="w-full appearance-none text-center" onchange="checkOther(this)"><option value="${row["年期"]||''}">${row["年期"]||''}</option><option value="1年">1年</option><option value="2年">2年</option><option value="其他">其他</option></select></td><td><textarea id="input-insmgmt-${index}-保險金額" readonly rows="1">${row["保險金額"]||''}</textarea></td><td><input type="text" onfocus="this.type='date'" id="input-insmgmt-${index}-生效日期" value="${row["生效日期"]||''}" readonly></td><td><textarea id="input-insmgmt-${index}-中介保險號碼" readonly rows="1">${row["中介保險號碼"]||''}</textarea></td><td><textarea id="input-insmgmt-${index}-保單號碼" readonly rows="1">${row["保單號碼"]||''}</textarea></td><td class="text-center"><input type="checkbox" id="input-insmgmt-${index}-已收回fee" ${row["已收回fee"]?'checked':''} disabled></td><td class="col-remark-wide"><textarea id="input-insmgmt-${index}-備註" readonly rows="1">${row["備註"]||''}</textarea></td>`;
+                 tr.innerHTML = html; tbody.appendChild(tr);
+            });
+            autoResizeTextareas();
+        }
+        function renderLabourTable() {
+            const tbody = document.getElementById('labour-body'); tbody.innerHTML = '';
+            appData.labourRecords.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="col-std">${row.sName}</td><td class="col-std">${row.sTel}</td><td class="col-address text-left">${row.sAddr}</td><td class="col-std">${row.sNat}</td><td class="col-wide">${row.sPass}</td><td class="col-std">${row.sHkid}</td><td class="col-wide">${row.eName}</td><td class="col-wide">${row.eTel}</td><td class="col-address text-left">${row.eAddr}</td><td class="col-wide">${row.eHkid}</td><td class="col-narrow">${row.comm}</td><td class="col-narrow">${row.rec}</td><td class="col-std">${row.date}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- Common Helpers ---
+        function checkOther(el) {
+            if(el.value === "其他") {
+                const input = document.createElement("input"); input.type = "text"; input.value = ""; input.id = el.id; input.className = el.className; input.classList.add("editing-input"); input.placeholder = "請輸入...";
+                el.parentNode.replaceChild(input, el); input.focus();
+            }
+        }
+        function handleInput() { 
+            if(event.target.tagName === 'TEXTAREA') { event.target.style.height='auto'; event.target.style.height=event.target.scrollHeight+'px'; }
+            resetTimer(); 
+        }
+        function resetTimer() { if(inactivityTimer) clearTimeout(inactivityTimer); inactivityTimer = setTimeout(() => { if(currentEditingRowId !== null) { saveChanges(currentEditingTab); updateStatus("閒置自動儲存"); } }, 60000); }
+        function autoResizeTextareas() { document.querySelectorAll('textarea').forEach(tx => { tx.style.height='auto'; tx.style.height=tx.scrollHeight+'px'; }); }
+        function attachCrosshairListeners() {
+            document.querySelectorAll('tbody tr').forEach((tr) => { tr.onmouseenter = () => { document.querySelectorAll('.hover-row').forEach(r => r.classList.remove('hover-row')); tr.classList.add('hover-row'); }; tr.onmouseleave = () => { document.querySelectorAll('.hover-row').forEach(r => r.classList.remove('hover-row')); }; });
+            document.querySelectorAll('td').forEach(td => { td.onmouseenter = () => { const cellIndex = td.cellIndex + 1; document.querySelectorAll('.hover-col').forEach(e=>e.classList.remove('hover-col')); document.querySelectorAll(`.col-${cellIndex}, .col-idx-${cellIndex-1}`).forEach(e=>e.classList.add('hover-col')); }; td.onmouseleave = () => { document.querySelectorAll('.hover-col').forEach(e=>e.classList.remove('hover-col')); }; });
+        }
+        function exportToExcel() {
+            if(appData.files.length===0) return alert("無資料");
+            const cleanHeaders = rawColumns.map(h => h.replace(/<br>/g, ""));
+            const ws = XLSX.utils.aoa_to_sheet([cleanHeaders, ...appData.files.map(r=>dataKeys.map(k=>r[k]||""))]);
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Data");
+            XLSX.writeFile(wb, `AgencyData_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+        function exportInsMgmtExcel() { if(appData.insuranceMgmt.length===0) return alert("無資料"); const ws = XLSX.utils.json_to_sheet(appData.insuranceMgmt); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "InsuranceMgmt"); XLSX.writeFile(wb, `InsuranceMgmt_${new Date().toISOString().slice(0,10)}.xlsx`); }
+        function exportLabourExcel() { const table = document.getElementById('labour-table'); const wb = XLSX.utils.table_to_book(table, {sheet: "LabourRecord"}); XLSX.writeFile(wb, `LabourRecord_${new Date().toISOString().slice(0,10)}.xlsx`); }
+        function exportLabourPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: "landscape" }); doc.addFont('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf', 'Roboto', 'normal'); doc.setFont("Roboto"); doc.text("PDF Export", 10, 10); doc.autoTable({ html: '#labour-table', startY: 20, theme: 'grid', styles: { fontSize: 8 } }); doc.save('LabourRecord.pdf'); }
+        function addNewFile() { 
+            if(currentEditingRowId !== null) return alert("請先儲存或取消目前的修改。"); 
+            const newId = generateNextID(); 
+            const newRow = {}; 
+            // Explicitly set all date fields to empty string
+            dataKeys.forEach(col => {
+                newRow[col] = (col === rawColumns[1]) ? newId : "";
+            });
+            appData.files.push(newRow); 
+            saveData(); 
+            renderMainTable(); 
+            setTimeout(() => { const c = document.querySelector('#file-management .overflow-auto'); c.scrollTop = c.scrollHeight; enableEdit('file', appData.files.length - 1); }, 100); 
+        }
+        function generateNextID() { let lastIdNum = 509; if (appData.files.length > 0) { const fileIdKey = rawColumns[1]; const lastIdStr = appData.files[appData.files.length-1][fileIdKey]; if (lastIdStr && lastIdStr.length >= 2) { const numPart = parseInt(lastIdStr.substring(1, lastIdStr.length-1)); if(!isNaN(numPart)) lastIdNum = numPart; } } const nextNum = lastIdNum + 1; const unitDigit = nextNum % 10; const checkDigit = unitDigit === 0 ? 0 : 10 - unitDigit; return `A${nextNum}${checkDigit}`; }
+        function addNewInsuranceMgmt() { if(currentEditingRowId !== null) return alert("請先儲存"); appData.insuranceMgmt.push({}); insMgmtCols.forEach(c => appData.insuranceMgmt[appData.insuranceMgmt.length-1][c] = ""); saveData(); renderInsMgmtTable(); setTimeout(() => enableEdit('insmgmt', appData.insuranceMgmt.length - 1), 100); }
+        function addNewRenewal() { if(currentEditingRowId !== null) return alert("請先儲存"); appData.renewalAlerts.push({ fileNo: "", empName: "", fdhName: "", renewalType: "其他Agent外傭", expiryDate: "", successMoney: false, helperStatus: "", helperRemarks: "", empStatus: "", empRemarks: "", compRemarks: "", status: "僱主自己搞" }); saveData(); renderRenewalAlertTable(); setTimeout(() => enableEdit('renewal', appData.renewalAlerts.length - 1), 100); }
+        function addNewInsurance() { if(currentEditingRowId !== null) return alert("請先儲存"); appData.insuranceAlerts.push({ fileNo: "", empName: "", fdhName: "", startDate: "", endDate: "", type: "", reminded: false, successMoney: false, remarks: "", status: "僱主自己搞" }); saveData(); renderInsuranceAlertTable(); setTimeout(() => enableEdit('insurance', appData.insuranceAlerts.length - 1), 100); }
+        function getMaxID(type) { let list = []; if(type === 'passport') list = appData.passportAlerts; if(type === 'visa') list = appData.visaAlerts; if(type === 'renewal') list = appData.renewalAlerts; if(list.length === 0) return "無"; let max = list[0].fileNo; list.forEach(item => { if(item.fileNo > max) max = item.fileNo; }); return max; }
+        
+        function copyData(type) {
+            let nextIndex = 0; const fileIdKey = rawColumns[1]; 
+            if(type === 'labour') { nextIndex = appData.labourRecords.length; } 
+            else {
+                const currentMax = getMaxID(type);
+                if (currentMax !== "無") {
+                    const idx = appData.files.findIndex(f => f[fileIdKey] === currentMax);
+                    if (idx !== -1) nextIndex = idx + 1;
+                }
+            }
+            
+            // Re-calc for derived fields (like 短日子類別) just in case
+            appData.files.forEach(f => calculateFields(f));
+
+            while(nextIndex < appData.files.length) {
+                const source = appData.files[nextIndex];
+                let isMatch = true;
+                if(type === 'passport' && source["短日子類別"] !== "短護照") isMatch = false;
+                if(type === 'visa' && source["短日子類別"] !== "短簽證") isMatch = false;
+                
+                if(isMatch) {
+                    const empNameKey = rawColumns[2]; const fdhNameKey = "外傭全名";
+                    const passportExpiry = source["護照有效期至"] || "";
+                    const contractEnd = source["合約完約日"] || "";
+                    
+                    if(type === 'passport') appData.passportAlerts.push({ fileNo: source[fileIdKey], empName: source[empNameKey], fdhName: source[fdhNameKey], expiryDate: passportExpiry, reminded: false, remarks: "" });
+                    else if(type === 'visa') appData.visaAlerts.push({ fileNo: source[fileIdKey], empName: source[empNameKey], fdhName: source[fdhNameKey], expiryDate: passportExpiry, remindedHelper: false, remindedEmp: false, successMoney: false, remarks: "", status: "僱主自己搞" });
+                    else if(type === 'renewal') appData.renewalAlerts.push({ fileNo: source[fileIdKey], empName: source[empNameKey], fdhName: source[fdhNameKey], renewalType: "我們外傭", expiryDate: contractEnd, successMoney: false, helperStatus: "", helperRemarks: "", empStatus: "", empRemarks: "", compRemarks: "", status: "僱主自己搞" });
+                    else if(type === 'labour') appData.labourRecords.push({ sName: source["外傭全名"]||"", sTel: source["外傭電話號碼"]||"", sAddr: source["外傭家鄉地址"]||"", sNat: source["外傭國籍"]||"", sPass: source["外傭護照號碼"]||"", sHkid: source["外傭身份證號碼"]||"", eName: source["僱主英文名"]||"", eTel: source["僱主電話號碼"]||"", eAddr: source["僱主居住地址"]||"", eHkid: source["僱主身份證號碼"]||"", comm: source["佣金"]||"", rec: source["外傭收據編號"]||"", date: source["佣金日期"]||"", empDate: source["簽證開始日"]||"" });
+                    
+                    saveData();
+                    if(type === 'labour') renderLabourTable(); else switchTab(type + '-alert'); 
+                    return;
+                }
+                nextIndex++;
+            }
+            // Display Not Found Msg
+            if(type === 'passport' || type === 'visa') {
+                const msgId = type + '-msg';
+                const msgSpan = document.createElement('span');
+                msgSpan.id = msgId;
+                msgSpan.className = 'bg-red-100 text-red-800 px-2 py-1 rounded font-bold ml-2';
+                msgSpan.innerText = '找不到相關資料';
+                const label = document.getElementById(type + '-max-label');
+                if(label && !document.getElementById(msgId)) label.parentNode.appendChild(msgSpan);
+                setTimeout(() => msgSpan.remove(), 3000);
+            } else {
+                alert("沒有更多符合條件的資料可複製。");
+            }
+        }
+        function sortData(type) {
+            let list = (type === 'passport') ? appData.passportAlerts : (type === 'visa') ? appData.visaAlerts : (type === 'renewal') ? appData.renewalAlerts : appData.insuranceAlerts;
+            let key = (type === 'insurance') ? 'endDate' : 'expiryDate';
+            list.sort((a, b) => (a[key]||"").localeCompare(b[key]||""));
+            saveData(); switchTab(type + '-alert');
+        }
+
+        // Sentences
+        function showVisaSentence() {
+            alert("X小姐您好😊\n\n姐姐Visa會在X月就到期，以免姐姐逾期居留，須要辦理Extend Visa\n\n我們可以代辦手續，謝謝");
+        }
+        function showRenewalMenu() { document.getElementById('renewal-modal').classList.remove('hidden'); }
+        function showSentence(type) {
+            const texts = {
+                'otherAgent': "您們有另一個姐姐，有無其他agent幫您們跟進合約簽證？\n\n如果無，我們公司可以完約前5個月提醒您們，然後安排另一個姐姐續約手續\n\n謝謝",
+                'askHelper': "hi XXXX\n\nYour contract will finish in XXXX\n\nWill you be renewing your contract with your employer? \n\nI have not yet asked your employer, I would like to ask you first. Could you please let me know about your decision?\n\nIf you decide to renew, I will ask your employer let us to process document",
+                'askEmp1': "X小姐您好，兩年了😊\n\n姐姐X月完約，您有無同姐姐傾續約？而家同姐姐傾就差唔多時間了\n\n我們可以代辦續約手續，謝謝",
+                'askEmp2': "您同姐姐會續約嗎？\n\n如果未有共識續約，也可以睇定新姐姐資料以作兩手準備\n\n有任何問題隨時聯絡我，謝謝😊🙏",
+                'success': "你們地址無變？(寫地址...)\n家庭成員無變？(寫成員...)\n外傭數目無變？(寫外傭數目...)\n姐姐續約新人工想寫幾多？\n問姐姐鄉下地址無變？(寫地址...)\n另外姐姐會幾時回鄉，因為續約期間姐姐不能離開香港，包括去澳門、內地等等",
+                'move': "1. ⁠新屋幾大？\n2. 有幾多間睡房？(包括工人房)\n3. 姐姐有無自己工人房？如有，工人房幾大？還是share房，會同邊個share房？\n4. 你send新地址證明"
+            };
+            alert(texts[type]);
+            document.getElementById('renewal-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

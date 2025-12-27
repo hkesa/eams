@@ -4,26 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>僱傭中心管理系統</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS (Excel) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.css"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- jsPDF (PDF) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --main-font-size: 21px;
-            /* 定義凍結欄位的左側距離 */
-            --sticky-col-0-left: 0px;       /* 修改按鈕 (60px) */
-            --sticky-col-1-left: 60px;      /* 檔案編號 (120px) */
-            --sticky-col-2-left: 180px;     /* 僱主姓名 (180px) */
+            --sticky-col-0-left: 0px;       
+            --sticky-col-1-left: 60px;      
+            --sticky-col-2-left: 180px;     
         }
 
         html, body, input, button, select, textarea, div, span, th, td {
@@ -34,7 +28,6 @@
         .nav-btn { padding: 10px 15px; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.3s; cursor: pointer; }
         .nav-btn.active { border-bottom: 3px solid #3b82f6; color: #3b82f6; font-weight: bold; }
 
-        /* Version Badge integrated in Nav */
         .version-tag { color: black; font-weight: bold; font-size: 16px !important; margin-left: 10px; align-self: center; }
 
         .custom-table { border-collapse: separate; border-spacing: 0; width: max-content; }
@@ -50,8 +43,8 @@
         input[type="checkbox"] { width: 24px; height: 24px; cursor: pointer; }
 
         /* File Management Sticky */
-        #files-table thead tr:first-child th { top: 0; position: sticky; z-index: 60; border-bottom: 2px solid #d1d5db; height: 35px; }
-        #files-table thead tr:nth-child(2) th { top: 35px; position: sticky; z-index: 50; background-color: #f3f4f6; height: 60px; padding-bottom: 4px; }
+        #files-table thead tr:first-child th { top: 0; position: sticky; z-index: 80; border-bottom: 2px solid #d1d5db; height: 35px; }
+        #files-table thead tr:nth-child(2) th { top: 35px; position: sticky; z-index: 70; background-color: #f3f4f6; height: 60px; padding-bottom: 4px; }
         #files-table .col-file-no { min-width: 120px !important; width: 120px; }
 
         /* Column Widths */
@@ -71,8 +64,8 @@
         .col-plus-chars-3 { min-width: 220px; width: 220px; }
         
         /* Sticky Columns Style */
-        .sticky-col { position: sticky; z-index: 40; border-right: 2px solid #d1d5db !important; } 
-        .sticky-col-header { z-index: 70 !important; background-color: #f3f4f6; } 
+        .sticky-col { position: sticky; z-index: 50; background-color: #f9fafb; border-right: 2px solid #d1d5db !important; } 
+        .sticky-col-header { z-index: 90 !important; background-color: #f3f4f6; } 
         .sticky-group-header { z-index: 95 !important; background-color: #e5e7eb; }
 
         .col-idx-0 { left: var(--sticky-col-0-left); width: 60px; min-width: 60px !important; }
@@ -82,38 +75,27 @@
         /* Alert Tables Sticky Headers */
         .alert-table thead tr th { top: 0; position: sticky; z-index: 70; background-color: #f3f4f6; height: 60px; }
 
-        /* Insurance Mgmt Sticky */
-        #ins-mgmt-table thead tr:first-child th { top: 0; position: sticky; z-index: 60; background-color: #e0f2fe; height: 50px; }
+        /* Mgmt Tables Sticky Header */
+        #ins-mgmt-table thead tr:first-child th,
+        #misc-mgmt-table thead tr:first-child th,
+        #receipt-table thead tr:first-child th { top: 0; position: sticky; z-index: 70; background-color: #e0f2fe; height: 50px; }
 
         /* Labour Table Sticky */
-        #labour-table thead tr:nth-child(1) th { top: 0; position: sticky; z-index: 35; background-color: #e5e7eb; height: 40px; }
-        #labour-table thead tr:nth-child(2) th { top: 40px; position: sticky; z-index: 34; background-color: #f3f4f6; height: 40px; }
-        #labour-table thead tr:nth-child(3) th { top: 80px; position: sticky; z-index: 33; background-color: #f9fafb; height: 60px; }
+        #labour-table thead tr:nth-child(1) th { top: 0; position: sticky; z-index: 80; background-color: #e5e7eb; height: 40px; }
+        #labour-table thead tr:nth-child(2) th { top: 40px; position: sticky; z-index: 75; background-color: #f3f4f6; height: 40px; }
+        #labour-table thead tr:nth-child(3) th { top: 80px; position: sticky; z-index: 70; background-color: #f9fafb; height: 60px; }
 
         /* --- Status Colors & Sticky Backgrounds --- */
-        /* IMPORTANT: Sticky cols must inherit row bg color to obscure scrolled content */
-        
-        /* Default Row */
         tbody tr:nth-child(even) td { background-color: #f9fafb; }
         tbody tr:nth-child(odd) td { background-color: #ffffff; }
         tbody tr:nth-child(even) .sticky-col { background-color: #f9fafb; }
         tbody tr:nth-child(odd) .sticky-col { background-color: #ffffff; }
 
-        /* 已完成 / 已收款 #dceafe */
         .row-blue td, .row-blue .sticky-col { background-color: #dceafe !important; } 
-        
-        /* 已退款 / 已取消 #fee2e1 */
         .row-red td, .row-red .sticky-col { background-color: #fee2e1 !important; } 
-        
-        /* 其他 / 外傭已終止 #9a9a9a */
-        .row-dark-gray td, .row-dark-gray .sticky-col { background-color: #9a9a9a !important; } 
-        
-        /* 淺灰 fallback if needed */
-        .row-gray td, .row-gray .sticky-col { background-color: #f3f4f6 !important; }
-
+        .row-green td, .row-green .sticky-col { background-color: #dcfce7 !important; } 
         .row-transparent { background-color: transparent !important; }
 
-        /* Hover Effect (overrides row color temporarily for focus) */
         .hover-row td, .hover-row .sticky-col { background-color: #e0f2fe !important; }
         .hover-col { background-color: #e0f2fe !important; }
 
@@ -135,6 +117,27 @@
         .bg-group-blue { background-color: #dbeafe !important; }
         .bg-group-purple { background-color: #f3e8ff !important; }
 
+        /* Kanban */
+        .kanban-board-container { display: flex; overflow-x: auto; height: calc(100vh - 120px); gap: 15px; padding-bottom: 10px; }
+        .kanban-column {
+            min-width: 280px; width: 280px;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+            display: flex; flex-direction: column;
+            padding: 10px;
+            height: 100%;
+        }
+        .kanban-header { font-weight: bold; text-align: center; margin-bottom: 10px; padding: 5px; background: #e5e7eb; border-radius: 4px; }
+        .kanban-cards { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .kanban-card {
+            background-color: white; border-radius: 4px; padding: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: grab; border: 1px solid #d1d5db;
+        }
+        .kanban-card:active { cursor: grabbing; }
+        .kanban-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #d1d5db; cursor: pointer; background: white; white-space: nowrap; }
+        .kanban-btn.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+
         /* Modal */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; display: flex; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 8px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; }
@@ -146,14 +149,16 @@
     <nav class="bg-white shadow-md z-50 overflow-x-auto relative pr-20">
         <div class="flex px-4 min-w-max h-full items-center">
             <button class="nav-btn active" onclick="switchTab('file-management')">檔案管理</button>
+            <button class="nav-btn" onclick="switchTab('kanban-progress')">查閱進度</button>
             <button class="nav-btn" onclick="switchTab('insurance-mgmt')">保險管理</button>
+            <button class="nav-btn" onclick="switchTab('misc-mgmt')">雜項管理</button>
             <button class="nav-btn" onclick="switchTab('receipt-management')">收據管理</button>
             <button class="nav-btn" onclick="switchTab('labour-record')">勞工處紀錄表格</button>
             <button class="nav-btn" onclick="switchTab('passport-alert')">短護照提醒</button>
             <button class="nav-btn" onclick="switchTab('visa-alert')">短簽證提醒</button>
             <button class="nav-btn" onclick="switchTab('renewal-alert')">續約提醒</button>
             <button class="nav-btn" onclick="switchTab('insurance-alert')">保險提醒</button>
-            <span class="version-tag">V1.14</span>
+            <span class="version-tag">V1.16</span>
         </div>
     </nav>
 
@@ -179,6 +184,21 @@
                     <thead id="table-head"></thead>
                     <tbody id="table-body"></tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- 1.2 Kanban Progress -->
+        <div id="kanban-progress" class="tab-content hidden h-full flex flex-col p-4">
+            <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+                <button class="kanban-btn active" onclick="switchKanbanBoard('phil-overseas')">菲傭海外</button>
+                <button class="kanban-btn" onclick="switchKanbanBoard('phil-finish')">菲傭完約</button>
+                <button class="kanban-btn" onclick="switchKanbanBoard('phil-renew')">菲傭續約</button>
+                <button class="kanban-btn" onclick="switchKanbanBoard('indo-overseas')">印傭海外</button>
+                <button class="kanban-btn" onclick="switchKanbanBoard('indo-finish')">印傭完約</button>
+                <button class="kanban-btn" onclick="switchKanbanBoard('indo-renew')">印傭續約</button>
+            </div>
+            <div id="kanban-board-area" class="kanban-board-container flex-1 bg-white border rounded p-4">
+                <!-- Kanban Columns Injected Here -->
             </div>
         </div>
 
@@ -214,9 +234,69 @@
             </div>
         </div>
 
+        <!-- 1.6 雜項管理 -->
+        <div id="misc-mgmt" class="tab-content hidden h-full flex flex-col p-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex gap-4">
+                    <button onclick="addNewMisc()" class="btn bg-blue-600 hover:bg-blue-700"><i class="fas fa-plus"></i> 新增雜項</button>
+                    <div id="edit-controls-misc" class="hidden flex gap-4">
+                        <button onclick="saveChanges('misc')" class="btn bg-red-600 hover:bg-red-700 animate-bounce"><i class="fas fa-save"></i> 儲存修改</button>
+                        <button onclick="cancelChanges('misc')" class="btn bg-gray-500"><i class="fas fa-times"></i> 取消修改</button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 overflow-auto border border-gray-300 rounded shadow bg-white relative">
+                <table class="custom-table min-w-full" id="misc-mgmt-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col sticky-col-header col-idx-0">修改</th>
+                            <th class="sticky-col sticky-col-header col-idx-1">檔案編號</th>
+                            <th class="sticky-col sticky-col-header col-idx-2">僱主中文名</th>
+                            <th class="col-wide">雜項類別</th><th class="col-std">付款狀態</th><th class="col-std">付款金額</th><th class="col-std">付款日期</th><th class="col-std">付款方式</th>
+                            <th class="col-remark-wide">備註 (如有)</th>
+                            <th class="col-std">入境處<br>遞交日期</th><th class="col-std">確收信<br>接收日期</th><th class="col-std">補交信<br>接收日期</th><th class="col-std">補交文件<br>遞交日期</th><th class="col-std">批准信<br>接收日期</th>
+                            <th class="col-std">誰取簽證</th><th class="col-remark-wide">入境處備註 (如有)</th><th class="col-narrow">相隔日數</th><th class="col-narrow">相隔週數</th>
+                        </tr>
+                    </thead>
+                    <tbody id="misc-mgmt-body"></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- 2. 收據管理 -->
-        <div id="receipt-management" class="tab-content hidden h-full p-4">
-            <div class="bg-white p-6 rounded shadow"><h2 class="font-bold">收據管理</h2><p>待開發...</p></div>
+        <div id="receipt-management" class="tab-content hidden h-full flex flex-col p-4">
+            <div class="flex justify-between mb-2">
+                <div class="flex gap-2 items-center">
+                    <button onclick="addNewReceipt()" class="btn bg-blue-600">Add Receipt</button>
+                    <button onclick="copyData('receipt')" class="btn bg-orange-500">Copy Data</button>
+                    <button onclick="sortReceipts()" class="btn bg-purple-500">Sort by Date</button>
+                    <div class="bg-gray-200 px-3 py-2 rounded font-bold text-gray-700" id="receipt-max-label">Copy until: None</div>
+                    <div id="edit-controls-receipt" class="hidden flex gap-2 ml-4">
+                        <button onclick="saveChanges('receipt')" class="btn bg-red-600 animate-bounce"><i class="fas fa-save"></i> Save</button>
+                        <button onclick="cancelChanges('receipt')" class="btn bg-gray-500"><i class="fas fa-times"></i> Cancel</button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 overflow-auto border border-gray-300 rounded shadow bg-white relative">
+                <table class="custom-table min-w-full" id="receipt-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col sticky-col-header col-idx-0">Edit</th>
+                            <th class="sticky-col sticky-col-header col-idx-1">Receipt No.</th>
+                            <th class="col-std">Customer's Chinese Name</th>
+                            <th class="col-std">Customer's English Name</th>
+                            <th class="col-std">Helper's Name</th>
+                            <th class="col-std">Payment Amount</th>
+                            <th class="col-std">Payment Date</th>
+                            <th class="col-std">Payment Method</th>
+                            <th class="col-wide">Category</th>
+                            <th class="col-remark-wide">Remarks</th>
+                            <th class="col-std">File No.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receipt-body"></tbody>
+                </table>
+            </div>
         </div>
 
         <!-- 3. 勞工處紀錄表格 -->
@@ -390,12 +470,10 @@
                  <div class="flex gap-2 items-center flex-1">
                     <button onclick="addNewInsurance()" class="btn bg-blue-600 whitespace-nowrap">新增保險</button>
                     <button onclick="sortData('insurance')" class="btn bg-purple-500 hover:bg-purple-600 whitespace-nowrap"><i class="fas fa-sort-amount-down"></i> 排序日期</button>
-                    
                     <div class="flex items-center gap-0 bg-gray-200 rounded overflow-hidden">
                         <span class="font-bold text-gray-700 text-sm whitespace-nowrap px-2">Check到:</span>
                         <input type="text" id="check-to-input" class="px-2 py-1 bg-white text-left outline-none border-l border-gray-300" style="width: 100px;">
                     </div>
-
                     <div id="edit-controls-insurance" class="hidden flex gap-2 ml-4">
                         <button onclick="saveChanges('insurance')" class="btn bg-red-600 animate-bounce whitespace-nowrap"><i class="fas fa-save"></i> 儲存修改</button>
                         <button onclick="cancelChanges('insurance')" class="btn bg-gray-500 whitespace-nowrap"><i class="fas fa-times"></i> 取消修改</button>
@@ -468,6 +546,17 @@
             "保險公司", "Plan", "年期", "保險金額", "生效日期", "中介保險號碼", "保單號碼", "已收回fee", "備註"
         ];
         
+        const miscMgmtCols = [
+            "檔案編號", "僱主中文名", "雜項類別", "付款狀態", "付款金額", "付款日期", "付款方式", "備註 (如有)", 
+            "入境處遞交日期", "確收信接收日期", "補交信接收日期", "補交文件遞交日期", "批准信接收日期", "誰取簽證", 
+            "入境處備註 (如有)", "相隔日數", "相隔週數"
+        ];
+
+        const receiptCols = [
+            "Receipt Number", "File No.", "Customer's Chinese Name", "Customer's English Name", "Helper's Name", 
+            "Payment Amount", "Payment Date", "Payment Method", "Category", "Remarks"
+        ];
+        
         const dropdownOptions = {
             "外傭國籍": ["菲律賓", "印尼", "其他"],
             "申請外傭類別": ["死亡 (在港)", "移民 (在港)", "財政 (在港)", "內續約 (我們)", "外續約 (直聘)", "斷約轉完約 (在港)", "完約 (在港)", "完約轉海外", "斷約轉海外", "我們海外", "學校海外", "直聘海外", "直聘完約 (在港)", "直聘完約轉海外", "直聘斷約轉完約 (在港)", "直聘斷約轉海外", "直聘死亡 (在港)", "直聘移民 (在港)", "直聘財政 (在港)"],
@@ -491,8 +580,19 @@
             "領事館<br>批出日期", "最早可遞交<br>入境處日期", "入境處<br>遞交日期", "確收信<br>接收日期", "補交信<br>接收日期", 
             "補交文件<br>遞交日期", "批准信<br>接收日期", "簽證領取日期", "簽證和合約<br>寄出日期", "學校手續<br>完成日期", 
             "入境日期", "簽證開始日", "真正上班日", "合約完約日", "護照有效期至", "合約開始日", "終止外傭日期", 
-            "僱主出生日期", "外傭出生日期", "香港驗身日期", "佣金日期", "僱主付款日期", "生效日期"
+            "僱主出生日期", "外傭出生日期", "香港驗身日期", "佣金日期", "僱主付款日期", "生效日期",
+            "付款日期", "入境處遞交日期", "補交文件遞交日期"
         ];
+
+        // Kanban Config
+        const kanbanBoards = {
+            'phil-overseas': { title: "菲傭海外", cols: ["未收錢", "已收錢但未齊文件", "未夠鐘交 (已收錢+齊文件)", "已交入境處", "已收確認信", "等補交文件", "等批簽證", "已批簽證", "已交領事館", "領事館已批", "已寄學校", "學校完成+等飛", "已安排飛", "等Filing歸檔"] },
+            'phil-finish': { title: "菲傭完約", cols: ["未收錢", "已收錢但未齊文件", "未夠鐘交 (已收錢+齊文件)", "已交入境處", "已收確認信", "等補交文件", "等批簽證", "驗身 (直聘除外)", "已批簽證", "已交領事館", "領事館已批", "等簽收文件", "等Filing歸檔"] },
+            'phil-renew': { title: "菲傭續約", cols: ["未收錢", "已收錢但未齊文件", "未夠鐘交 (已收錢+齊文件)", "已交入境處", "已收確認信", "等補交文件", "等批簽證", "已批簽證", "已交領事館", "領事館已批", "等簽收文件", "等Filing歸檔"] },
+            'indo-overseas': { title: "印傭海外", cols: ["未收錢", "已收錢但未齊文件", "未夠鐘交 (已收錢+齊文件)", "已交領事館", "領事館已批", "已交入境處", "合約已寄學校", "已收確認信", "等補交文件", "等批簽證", "已批簽證", "WhatsApp簽證給學校", "學校完成+等飛", "已安排飛", "等Filing歸檔"] },
+            'indo-finish': { title: "印傭完約", cols: ["未收錢", "已收錢但未齊文件", "未夠鐘交 (已收錢+齊文件)", "已驗身", "已交領事館", "領事館已批", "已交入境處", "已收確認信", "等補交文件", "等批簽證", "已批簽證", "等簽收文件", "等Filing歸檔"] },
+            'indo-renew': { title: "印傭續約", cols: ["未收錢", "已收錢但未齊文件", "未夠鐘交 (已收錢+齊文件)", "已驗身", "已交領事館", "領事館已批", "已交入境處", "已收確認信", "等補交文件", "等批簽證", "已批簽證", "等簽收文件", "等Filing歸檔"] }
+        };
 
         const groups = [
             { start: "僱主英文名", end: "申請外傭類別", label: "協議區", colorClass: "bg-group-red" },
@@ -512,11 +612,12 @@
             { start: "僱主備註", end: "申請狀態", label: "備註區", colorClass: "bg-group-red" },
         ];
 
-        let appData = { files: [], passportAlerts: [], visaAlerts: [], renewalAlerts: [], insuranceAlerts: [], labourRecords: [], insuranceMgmt: [] };
+        let appData = { files: [], passportAlerts: [], visaAlerts: [], renewalAlerts: [], insuranceAlerts: [], labourRecords: [], insuranceMgmt: [], miscMgmt: [], receipts: [] };
         let currentEditingRowId = null; 
         let currentEditingTab = null;
         let inactivityTimer = null;
         let tempRowData = null;
+        let currentKanbanBoard = 'phil-overseas';
 
         window.onload = function() {
             loadData();
@@ -525,28 +626,28 @@
         };
 
         function loadData() {
-            const savedData = localStorage.getItem('agencyData_v1_14'); 
+            const savedData = localStorage.getItem('agencyData_v1_16'); 
             if (savedData) {
                 appData = JSON.parse(savedData);
             } else {
-                const old = localStorage.getItem('agencyData_v1_13');
+                const old = localStorage.getItem('agencyData_v1_15');
                 if(old) appData = {...JSON.parse(old)};
             }
             if(!appData.insuranceMgmt) appData.insuranceMgmt=[];
+            if(!appData.miscMgmt) appData.miscMgmt=[];
+            if(!appData.receipts) appData.receipts=[];
             
-            // Recalculate derived fields on load to ensure copyData works correctly
             appData.files.forEach(f => {
                 if(!f["申請狀態"]) f["申請狀態"] = "辦理中"; 
+                // Initialize Kanban Status if missing
+                if(!f.progressStatus) f.progressStatus = "未收錢"; 
                 calculateFields(f); 
             });
-            appData.visaAlerts.forEach(f => { if(!f.status) f.status = "僱主自己搞"; });
-            appData.renewalAlerts.forEach(f => { if(!f.status) f.status = "僱主自己搞"; });
-            appData.insuranceAlerts.forEach(f => { if(!f.status) f.status = "僱主自己搞"; });
             updateMaxLabels();
         }
 
         function saveData() {
-            localStorage.setItem('agencyData_v1_14', JSON.stringify(appData));
+            localStorage.setItem('agencyData_v1_16', JSON.stringify(appData));
             updateStatus("已儲存");
             updateMaxLabels();
         }
@@ -561,24 +662,108 @@
             document.getElementById('visa-max-label').innerText = "複製到: " + getMaxID('visa');
             document.getElementById('renewal-max-label').innerText = "複製到: " + getMaxID('renewal');
             document.getElementById('labour-max-label').innerText = "紀錄數: " + appData.labourRecords.length;
+            document.getElementById('receipt-max-label').innerText = "Copy until: " + getMaxID('receipt');
         }
 
         function switchTab(tabId) {
             if(currentEditingRowId !== null) return alert("請先儲存或取消目前的修改。");
+            const target = document.getElementById(tabId);
+            if (!target) { console.error("Tab not found:", tabId); return; }
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.remove('hidden');
-            const tabs = ['file-management', 'insurance-mgmt', 'receipt-management', 'labour-record', 'passport-alert', 'visa-alert', 'renewal-alert', 'insurance-alert'];
+            target.classList.remove('hidden');
+            const tabs = ['file-management', 'insurance-mgmt', 'misc-mgmt', 'receipt-management', 'labour-record', 'passport-alert', 'visa-alert', 'renewal-alert', 'insurance-alert', 'kanban-progress'];
             const idx = tabs.indexOf(tabId);
             if(idx !== -1) document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+            
             if (tabId === 'file-management') renderMainTable();
             else if (tabId === 'insurance-mgmt') renderInsMgmtTable();
+            else if (tabId === 'misc-mgmt') renderMiscMgmtTable();
+            else if (tabId === 'receipt-management') renderReceiptTable();
             else if (tabId === 'labour-record') renderLabourTable();
             else if (tabId === 'passport-alert') renderPassportAlertTable();
             else if (tabId === 'visa-alert') renderVisaAlertTable();
             else if (tabId === 'renewal-alert') renderRenewalAlertTable();
             else if (tabId === 'insurance-alert') renderInsuranceAlertTable();
-            setTimeout(attachCrosshairListeners, 100);
+            else if (tabId === 'kanban-progress') switchKanbanBoard('phil-overseas'); // Default
+            
+            if(tabId !== 'kanban-progress') setTimeout(attachCrosshairListeners, 100);
+        }
+
+        // Kanban Logic
+        function switchKanbanBoard(boardType) {
+            currentKanbanBoard = boardType;
+            document.querySelectorAll('.kanban-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.querySelector(`button[onclick="switchKanbanBoard('${boardType}')"]`);
+            if(btn) btn.classList.add('active');
+            renderKanban(boardType);
+        }
+
+        function getBoardFiles(boardType) {
+            // Logic to filter files based on criteria
+            return appData.files.filter(f => {
+                const nat = f["外傭國籍"];
+                const type = f["申請外傭類別"] || "";
+                
+                let isPhil = nat === "菲律賓";
+                let isIndo = nat === "印尼";
+                let isOverseas = type.includes("海外");
+                let isFinish = type.includes("完約");
+                let isRenew = type.includes("續約");
+
+                if (boardType === 'phil-overseas') return isPhil && isOverseas;
+                if (boardType === 'phil-finish') return isPhil && isFinish;
+                if (boardType === 'phil-renew') return isPhil && isRenew;
+                if (boardType === 'indo-overseas') return isIndo && isOverseas;
+                if (boardType === 'indo-finish') return isIndo && isFinish;
+                if (boardType === 'indo-renew') return isIndo && isRenew;
+                return false;
+            });
+        }
+
+        function renderKanban(boardType) {
+            const container = document.getElementById('kanban-board-area');
+            container.innerHTML = '';
+            const columns = kanbanBoards[boardType].cols;
+            const files = getBoardFiles(boardType);
+
+            columns.forEach(colName => {
+                const colDiv = document.createElement('div');
+                colDiv.className = 'kanban-column';
+                colDiv.innerHTML = `<div class="kanban-header">${colName}</div>`;
+                const cardArea = document.createElement('div');
+                cardArea.className = 'kanban-cards';
+                cardArea.dataset.status = colName;
+                
+                // Drag Events on Column
+                cardArea.addEventListener('dragover', e => e.preventDefault());
+                cardArea.addEventListener('drop', e => {
+                    e.preventDefault();
+                    const fileId = e.dataTransfer.getData('text/plain');
+                    const file = appData.files.find(f => f[rawColumns[1]] === fileId); // Use rawColumns[1] for FileID
+                    if(file) {
+                        file.progressStatus = colName;
+                        saveData();
+                        renderKanban(currentKanbanBoard);
+                    }
+                });
+
+                // Find files in this column
+                const colFiles = files.filter(f => (f.progressStatus || "未收錢") === colName);
+                colFiles.forEach(f => {
+                    const card = document.createElement('div');
+                    card.className = 'kanban-card';
+                    card.draggable = true;
+                    card.innerHTML = `<b>${f["檔案編號"]}</b><br>${f["僱主中文名"]}<br>${f["外傭全名"]}`;
+                    card.addEventListener('dragstart', e => {
+                        e.dataTransfer.setData('text/plain', f["檔案編號"]);
+                    });
+                    cardArea.appendChild(card);
+                });
+
+                colDiv.appendChild(cardArea);
+                container.appendChild(colDiv);
+            });
         }
 
         function diffDays(d1, d2) {
@@ -627,6 +812,12 @@
             else row["兩人相差歲數<br>(僱主 減 外傭)"] = "";
         }
 
+        function calculateMiscFields(row) {
+            const days = diffDays(row["批准信接收日期"], row["入境處遞交日期"]);
+            row["相隔日數"] = days;
+            row["相隔週數"] = days ? (days / 7).toFixed(1) : "";
+        }
+
         function updateAlerts(fileId, field, value) {
             const pp = appData.passportAlerts.find(a => a.fileNo === fileId);
             const vs = appData.visaAlerts.find(a => a.fileNo === fileId);
@@ -648,22 +839,27 @@
             // Deep copy backup
             if(tab === 'file') tempRowData = JSON.parse(JSON.stringify(appData.files[idx]));
             else if(tab === 'insmgmt') tempRowData = JSON.parse(JSON.stringify(appData.insuranceMgmt[idx]));
+            else if(tab === 'misc') tempRowData = JSON.parse(JSON.stringify(appData.miscMgmt[idx]));
+            else if(tab === 'receipt') tempRowData = JSON.parse(JSON.stringify(appData.receipts[idx]));
             else if(tab === 'passport') tempRowData = JSON.parse(JSON.stringify(appData.passportAlerts[idx]));
             else if(tab === 'visa') tempRowData = JSON.parse(JSON.stringify(appData.visaAlerts[idx]));
             else if(tab === 'renewal') tempRowData = JSON.parse(JSON.stringify(appData.renewalAlerts[idx]));
             else if(tab === 'insurance') tempRowData = JSON.parse(JSON.stringify(appData.insuranceAlerts[idx]));
 
-            const container = document.getElementById(tab === 'file' ? 'edit-controls-file' : (tab === 'insmgmt' ? 'edit-controls-insmgmt' : `edit-controls-${tab}`));
+            const container = document.getElementById(tab === 'file' ? 'edit-controls-file' : (tab === 'insmgmt' ? 'edit-controls-insmgmt' : (tab === 'misc' ? 'edit-controls-misc' : (tab === 'receipt' ? 'edit-controls-receipt' : `edit-controls-${tab}`))));
             if(container) container.classList.remove('hidden');
 
             const btn = document.getElementById(`btn-edit-${tab}-${idx}`);
             if(btn) btn.innerHTML = `<i class="fas fa-pen-nib text-red-500"></i>`;
 
             const isAlert = ['passport','visa','renewal','insurance'].includes(tab);
+            let isNewRenewal = false;
+            if(tab === 'renewal' && appData.renewalAlerts[idx].renewalType === "其他Agent外傭") isNewRenewal = true;
+
             document.querySelectorAll(`[id^="input-${tab}-${idx}-"]`).forEach(el => {
                 const idParts = el.id.split('-');
                 const fieldName = idParts.slice(3).join('-');
-                if(isAlert && (fieldName === 'fileNo' || fieldName === 'empName' || fieldName === 'fdhName' || fieldName === 'expiryDate' || fieldName === 'startDate' || fieldName === 'endDate')) return;
+                if(isAlert && !isNewRenewal && (fieldName === 'fileNo' || fieldName === 'empName' || fieldName === 'fdhName' || fieldName === 'expiryDate' || fieldName === 'startDate' || fieldName === 'endDate')) return;
                 
                 el.readOnly = false; el.disabled = false; el.classList.add('editing-input');
             });
@@ -686,6 +882,12 @@
                  renderMainTable();
             } else if(tab === 'insmgmt') {
                  insMgmtCols.forEach(col => { const el = document.getElementById(`input-insmgmt-${idx}-${col}`); if(el) appData.insuranceMgmt[idx][col] = (el.type==='checkbox' ? el.checked : el.value); });
+            } else if(tab === 'misc') {
+                 miscMgmtCols.forEach(col => { const el = document.getElementById(`input-misc-${idx}-${col}`); if(el) appData.miscMgmt[idx][col] = el.value; });
+                 calculateMiscFields(appData.miscMgmt[idx]);
+                 renderMiscMgmtTable();
+            } else if(tab === 'receipt') {
+                 receiptCols.forEach(col => { const el = document.getElementById(`input-receipt-${idx}-${col.replace(/\s/g,'')}`); if(el) appData.receipts[idx][col] = el.value; });
             } else {
                 const list = (tab==='passport') ? appData.passportAlerts : (tab==='visa') ? appData.visaAlerts : (tab==='renewal') ? appData.renewalAlerts : appData.insuranceAlerts;
                 document.querySelectorAll(`[id^="input-${tab}-${idx}-"]`).forEach(input => {
@@ -704,15 +906,18 @@
             if(currentEditingRowId === null) return;
             if(tab === 'file') appData.files[currentEditingRowId] = tempRowData;
             else if(tab === 'insmgmt') appData.insuranceMgmt[currentEditingRowId] = tempRowData;
+            else if(tab === 'misc') appData.miscMgmt[currentEditingRowId] = tempRowData;
+            else if(tab === 'receipt') appData.receipts[currentEditingRowId] = tempRowData;
             else if(tab === 'passport') appData.passportAlerts[currentEditingRowId] = tempRowData;
             else if(tab === 'visa') appData.visaAlerts[currentEditingRowId] = tempRowData;
             else if(tab === 'renewal') appData.renewalAlerts[currentEditingRowId] = tempRowData;
             else if(tab === 'insurance') appData.insuranceAlerts[currentEditingRowId] = tempRowData;
             
-            // Re-render
-            endEdit(); // Close edit mode first
+            endEdit(); 
             if(tab==='file') renderMainTable();
             else if(tab==='insmgmt') renderInsMgmtTable();
+            else if(tab==='misc') renderMiscMgmtTable();
+            else if(tab==='receipt') renderReceiptTable();
             else switchTab(tab + '-alert'); 
         }
 
@@ -720,7 +925,7 @@
             if(currentEditingRowId === null) return;
             const tab = currentEditingTab; const idx = currentEditingRowId;
             document.querySelectorAll(`[id^="input-${tab}-${idx}-"]`).forEach(el => { el.readOnly = true; el.disabled = true; el.classList.remove('editing-input'); });
-            const container = document.getElementById(tab === 'file' ? 'edit-controls-file' : (tab === 'insmgmt' ? 'edit-controls-insmgmt' : `edit-controls-${tab}`));
+            const container = document.getElementById(tab === 'file' ? 'edit-controls-file' : (tab === 'insmgmt' ? 'edit-controls-insmgmt' : (tab === 'misc' ? 'edit-controls-misc' : (tab === 'receipt' ? 'edit-controls-receipt' : `edit-controls-${tab}`))));
             if(container) container.classList.add('hidden');
             const btn = document.getElementById(`btn-edit-${tab}-${idx}`);
             if(btn) btn.innerHTML = `<i class="fas fa-edit"></i>`;
@@ -738,7 +943,7 @@
         function getRowClass(status) {
             if(status === '已完成' || status === '已收款') return 'row-blue';
             if(status === '已退款' || status === '已取消') return 'row-red';
-            if(status === '其他' || status === '外傭已終止') return 'row-dark-gray';
+            if(status === '其他' || status === '外傭已終止') return 'row-green'; 
             return ''; 
         }
 
@@ -819,7 +1024,47 @@
             autoResizeTextareas();
         }
 
-        // --- Alerts Renderers ---
+        // --- New Tables Renderers ---
+        function renderMiscMgmtTable() {
+            const tbody = document.getElementById('misc-mgmt-body'); tbody.innerHTML = '';
+            appData.miscMgmt.forEach((row, index) => {
+                 const tr = document.createElement('tr');
+                 let html = `<td class="sticky-col col-idx-0 text-center border-r shadow-sm"><button id="btn-edit-misc-${index}" onclick="enableEdit('misc', ${index})" class="text-blue-600"><i class="fas fa-edit"></i></button></td>
+                    <td class="sticky-col col-idx-1"><textarea id="input-misc-${index}-檔案編號" readonly rows="1">${row["檔案編號"]||''}</textarea></td>
+                    <td class="sticky-col col-idx-2"><textarea id="input-misc-${index}-僱主中文名" readonly rows="1">${row["僱主中文名"]||''}</textarea></td>
+                    <td><select id="input-misc-${index}-雜項類別" disabled class="w-full appearance-none text-center"><option value="${row["雜項類別"]||''}">${row["雜項類別"]||''}</option><option>短簽證extend</option><option>第25個月extend</option><option>香港過期extend</option><option>海外過期extend</option><option>不出境extend</option><option>買機票</option><option>中國簽證</option><option>其他</option></select></td>
+                    <td><select id="input-misc-${index}-付款狀態" disabled class="w-full appearance-none text-center"><option value="${row["付款狀態"]||''}">${row["付款狀態"]||''}</option><option>等待付款</option><option>等待查核</option><option>只付部分</option><option>全部已付</option></select></td>
+                    <td><textarea id="input-misc-${index}-付款金額" readonly rows="1">${row["付款金額"]||''}</textarea></td><td><input type="text" onfocus="this.type='date'" id="input-misc-${index}-付款日期" value="${row["付款日期"]||''}" readonly></td>
+                    <td><select id="input-misc-${index}-付款方式" disabled class="w-full appearance-none text-center" onchange="checkOther(this)"><option value="${row["付款方式"]||''}">${row["付款方式"]||''}</option><option>現金</option><option>公司中銀</option><option>公司中銀支票</option><option>公司PayMe</option><option>個人滙豐</option><option>其他</option></select></td>
+                    <td class="col-remark-wide"><textarea id="input-misc-${index}-備註 (如有)" readonly rows="1">${row["備註 (如有)"]||''}</textarea></td>
+                    <td><input type="text" onfocus="this.type='date'" id="input-misc-${index}-入境處遞交日期" value="${row["入境處遞交日期"]||''}" readonly></td><td><input type="text" onfocus="this.type='date'" id="input-misc-${index}-確收信接收日期" value="${row["確收信接收日期"]||''}" readonly></td><td><input type="text" onfocus="this.type='date'" id="input-misc-${index}-補交信接收日期" value="${row["補交信接收日期"]||''}" readonly></td><td><input type="text" onfocus="this.type='date'" id="input-misc-${index}-補交文件遞交日期" value="${row["補交文件遞交日期"]||''}" readonly></td><td><input type="text" onfocus="this.type='date'" id="input-misc-${index}-批准信接收日期" value="${row["批准信接收日期"]||''}" readonly></td>
+                    <td><textarea id="input-misc-${index}-誰取簽證" readonly rows="1">${row["誰取簽證"]||''}</textarea></td><td class="col-remark-wide"><textarea id="input-misc-${index}-入境處備註 (如有)" readonly rows="1">${row["入境處備註 (如有)"]||''}</textarea></td><td><textarea id="input-misc-${index}-相隔日數" readonly rows="1">${row["相隔日數"]||''}</textarea></td><td><textarea id="input-misc-${index}-相隔週數" readonly rows="1">${row["相隔週數"]||''}</textarea></td>`;
+                 tr.innerHTML = html; tbody.appendChild(tr);
+            });
+            autoResizeTextareas();
+        }
+
+        function renderReceiptTable() {
+            const tbody = document.getElementById('receipt-body'); tbody.innerHTML = '';
+            appData.receipts.forEach((row, index) => {
+                 const tr = document.createElement('tr');
+                 let html = `<td class="sticky-col col-idx-0 text-center border-r shadow-sm"><button id="btn-edit-receipt-${index}" onclick="enableEdit('receipt', ${index})" class="text-blue-600"><i class="fas fa-edit"></i></button></td>
+                    <td class="sticky-col col-idx-1"><textarea id="input-receipt-${index}-ReceiptNumber" readonly rows="1">${row["Receipt Number"]||''}</textarea></td>
+                    <td class="col-std"><textarea id="input-receipt-${index}-FileNo" readonly rows="1">${row["File No."]||''}</textarea></td>
+                    <td class="col-std"><textarea id="input-receipt-${index}-CustomersChineseName" readonly rows="1">${row["Customer's Chinese Name"]||''}</textarea></td>
+                    <td class="col-std"><textarea id="input-receipt-${index}-CustomersEnglishName" readonly rows="1">${row["Customer's English Name"]||''}</textarea></td>
+                    <td class="col-std"><textarea id="input-receipt-${index}-HelpersName" readonly rows="1">${row["Helper's Name"]||''}</textarea></td>
+                    <td class="col-std"><textarea id="input-receipt-${index}-PaymentAmount" readonly rows="1">${row["Payment Amount"]||''}</textarea></td>
+                    <td class="col-std"><input type="text" onfocus="this.type='date'" id="input-receipt-${index}-PaymentDate" value="${row["Payment Date"]||''}" readonly></td>
+                    <td class="col-std"><textarea id="input-receipt-${index}-PaymentMethod" readonly rows="1">${row["Payment Method"]||''}</textarea></td>
+                    <td class="col-wide"><select id="input-receipt-${index}-Category" disabled class="w-full appearance-none text-center"><option value="${row["Category"]||''}">${row["Category"]||''}</option><option>Employment</option><option>Contract Renewal</option><option>Insurance</option><option>Extend Visa</option><option>Body Check</option><option>Air Ticket</option></select></td>
+                    <td class="col-remark-wide"><textarea id="input-receipt-${index}-Remarks" readonly rows="1">${row["Remarks"]||''}</textarea></td>`;
+                 tr.innerHTML = html; tbody.appendChild(tr);
+            });
+            autoResizeTextareas();
+        }
+
+        // --- Existing Renderers (Updated) ---
         function renderPassportAlertTable() {
             const tbody = document.getElementById('passport-body'); tbody.innerHTML = '';
             appData.passportAlerts.forEach((item, index) => {
@@ -925,11 +1170,12 @@
         function addNewInsuranceMgmt() { if(currentEditingRowId !== null) return alert("請先儲存"); appData.insuranceMgmt.push({}); insMgmtCols.forEach(c => appData.insuranceMgmt[appData.insuranceMgmt.length-1][c] = ""); saveData(); renderInsMgmtTable(); setTimeout(() => enableEdit('insmgmt', appData.insuranceMgmt.length - 1), 100); }
         function addNewRenewal() { if(currentEditingRowId !== null) return alert("請先儲存"); appData.renewalAlerts.push({ fileNo: "", empName: "", fdhName: "", renewalType: "其他Agent外傭", expiryDate: "", successMoney: false, helperStatus: "", helperRemarks: "", empStatus: "", empRemarks: "", compRemarks: "", status: "僱主自己搞" }); saveData(); renderRenewalAlertTable(); setTimeout(() => enableEdit('renewal', appData.renewalAlerts.length - 1), 100); }
         function addNewInsurance() { if(currentEditingRowId !== null) return alert("請先儲存"); appData.insuranceAlerts.push({ fileNo: "", empName: "", fdhName: "", startDate: "", endDate: "", type: "", reminded: false, successMoney: false, remarks: "", status: "僱主自己搞" }); saveData(); renderInsuranceAlertTable(); setTimeout(() => enableEdit('insurance', appData.insuranceAlerts.length - 1), 100); }
-        function getMaxID(type) { let list = []; if(type === 'passport') list = appData.passportAlerts; if(type === 'visa') list = appData.visaAlerts; if(type === 'renewal') list = appData.renewalAlerts; if(list.length === 0) return "無"; let max = list[0].fileNo; list.forEach(item => { if(item.fileNo > max) max = item.fileNo; }); return max; }
+        function getMaxID(type) { let list = []; if(type === 'passport') list = appData.passportAlerts; if(type === 'visa') list = appData.visaAlerts; if(type === 'renewal') list = appData.renewalAlerts; if(type === 'receipt') list = appData.receipts; if(list.length === 0) return "無"; let max = list[0].fileNo || list[0]["Receipt Number"]; list.forEach(item => { let val = item.fileNo || item["Receipt Number"]; if(val > max) max = val; }); return max; }
         
         function copyData(type) {
             let nextIndex = 0; const fileIdKey = rawColumns[1]; 
             if(type === 'labour') { nextIndex = appData.labourRecords.length; } 
+            else if(type === 'receipt') { nextIndex = appData.receipts.length; }
             else {
                 const currentMax = getMaxID(type);
                 if (currentMax !== "無") {
@@ -938,8 +1184,24 @@
                 }
             }
             
-            // Re-calc for derived fields (like 短日子類別) just in case
             appData.files.forEach(f => calculateFields(f));
+
+            if(type === 'receipt') {
+                if (nextIndex >= appData.files.length) return alert("已是最新資料");
+                const src = appData.files[nextIndex];
+                appData.receipts.push({
+                    "Receipt Number": generateNextID(), 
+                    "File No.": src["檔案編號"],
+                    "Customer's Chinese Name": src["僱主中文名"],
+                    "Customer's English Name": src["僱主英文名"],
+                    "Helper's Name": src["外傭全名"],
+                    "Payment Amount": src["實收金額"],
+                    "Payment Date": src["收款日期"],
+                    "Payment Method": src["付款方式"],
+                    "Category": "", "Remarks": ""
+                });
+                saveData(); renderReceiptTable(); return;
+            }
 
             while(nextIndex < appData.files.length) {
                 const source = appData.files[nextIndex];
@@ -963,15 +1225,10 @@
                 }
                 nextIndex++;
             }
-            // Display Not Found Msg
             if(type === 'passport' || type === 'visa') {
                 const msgId = type + '-msg';
-                const msgSpan = document.createElement('span');
-                msgSpan.id = msgId;
-                msgSpan.className = 'bg-red-100 text-red-800 px-2 py-1 rounded font-bold ml-2';
-                msgSpan.innerText = '找不到相關資料';
-                const label = document.getElementById(type + '-max-label');
-                if(label && !document.getElementById(msgId)) label.parentNode.appendChild(msgSpan);
+                const msgSpan = document.createElement('span'); msgSpan.id = msgId; msgSpan.className = 'bg-red-100 text-red-800 px-2 py-1 rounded font-bold ml-2'; msgSpan.innerText = '找不到相關資料';
+                const label = document.getElementById(type + '-max-label'); if(label && !document.getElementById(msgId)) label.parentNode.appendChild(msgSpan);
                 setTimeout(() => msgSpan.remove(), 3000);
             } else {
                 alert("沒有更多符合條件的資料可複製。");
@@ -983,6 +1240,7 @@
             list.sort((a, b) => (a[key]||"").localeCompare(b[key]||""));
             saveData(); switchTab(type + '-alert');
         }
+        function sortReceipts() { appData.receipts.sort((a,b) => (a["Payment Date"]||"").localeCompare(b["Payment Date"]||"")); saveData(); renderReceiptTable(); }
 
         // Sentences
         function showVisaSentence() {
@@ -1001,6 +1259,9 @@
             alert(texts[type]);
             document.getElementById('renewal-modal').classList.add('hidden');
         }
+        function addNewMisc() { if(currentEditingRowId !== null) return alert("請先儲存"); appData.miscMgmt.push({}); miscMgmtCols.forEach(c => appData.miscMgmt[appData.miscMgmt.length-1][c] = ""); saveData(); renderMiscMgmtTable(); setTimeout(() => enableEdit('misc', appData.miscMgmt.length - 1), 100); }
+        function addNewReceipt() { if(currentEditingRowId !== null) return alert("請先儲存"); appData.receipts.push({}); receiptCols.forEach(c => appData.receipts[appData.receipts.length-1][c] = ""); saveData(); renderReceiptTable(); setTimeout(() => enableEdit('receipt', appData.receipts.length - 1), 100); }
+        function calculateMiscFields(row) { const days = diffDays(row["批准信接收日期"], row["入境處遞交日期"]); row["相隔日數"] = days; row["相隔週數"] = days ? (days / 7).toFixed(1) : ""; }
     </script>
 </body>
 </html>
